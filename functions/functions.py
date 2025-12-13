@@ -847,18 +847,8 @@ def add_new_region(root, left_frame=None, right_frame=None):
             show_error("Region already exists.", root)
             return
 
-        new_region = {
-            name_val: {
-                "Region": name_val,
-                "Cities": [],
-                "POI": [],
-                "Notes": []
-            }
-        }
-
-        regions_dict.update(new_region)
-
-        save_json("regions.json", regions_dict)
+        region = Region(name_val)
+        region.save_to_file()
 
         popup.destroy()
 
@@ -952,17 +942,326 @@ def add_note(section, root, left_frame=None, right_frame=None):
             show_error("Please insert a note.", root)
             return
 
-        data = load_json("regions")
-        selected = config.button_flag
+        data = load_json("regions.json")
 
-        if selected not in data:
-            show_error(f"{selected} not found in regions.json", root)
+        if config.last_flag == "Regions":
+            region_name = section
+        else:
+            region_name = config.last_flag
+
+        if region_name not in data:
+            show_error(f"{region_name} does not exist.", root)
+
+        region_entry = data[region_name]
+        target_name = section
+
+        if target_name == region_name:
+            notes_list = region_entry["Notes"]
+            note_id = len(notes_list) + 1
+            notes_list.append({"id": note_id, "note": note_text})
+            save_json("regions.json", data)
+        else:
+            for city in region_entry["Cities"]:
+                if city["City"] == target_name:
+                    notes_list = city["Notes"]
+                    note_id = len(notes_list) + 1
+                    notes_list.append({"id": note_id, "note": note_text})
+                    save_json("regions.json", data)
+            for poi in region_entry["POI"]:
+                if poi["Point of Interest"] == target_name:
+                    notes_list = poi["Notes"]
+                    note_id = len(notes_list) + 1
+                    notes_list.append({"id": note_id, "note": note_text})
+                    save_json("regions.json", data)
+        popup.destroy()
+
+        if left_frame and right_frame:
+            from functions.pages import dynamic_page_loader
+            label = config.button_flag
+            dynamic_page_loader(label, root, left_frame, right_frame)
+
+    def on_cancel():
+        popup.destroy()
+
+    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
+    submit_btn.pack(pady=10)
+    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
+    cancel_btn.pack(pady=10)
+    
+def delete_note(section, root, left_frame=None, right_frame=None):
+    popup = tk.Toplevel(root)
+    popup.title(f"Delete {section} note.")
+
+    instr_label = tk.Label(popup, text=f"Delete Note from {section}")
+    instr_label.pack(pady=10)
+
+    if config.last_flag == "Regions":
+        region_name = section
+    else:
+        region_name = config.last_flag
+    data = load_json("regions.json")
+    region_entry = data[region_name]
+
+    def on_submit():
+        if region_name not in data:
+            show_error(f"Region {region_name} does not exist.", root)
             return
 
-        region_entry = data[selected]
+        target_name = section
 
-        if section == "Region":
-            region_entry.setdefault("Notes", [])
-            region_entry["Notes"].append({
-                "id"
-            })
+        if target_name == region_name:
+            notes_list = region_entry["Notes"]
+            note_to_delete = note_id.get()
+
+            notes_list = [n for n in notes_list if int(n["id"]) != note_to_delete]
+
+            for i, n in enumerate(notes_list, 1):
+                n["id"] = i
+
+            region_entry["Notes"] = notes_list
+            save_json("regions.json", data)
+            popup.destroy()
+
+            if left_frame and right_frame:
+                from functions.pages import dynamic_page_loader
+                label = config.button_flag
+                dynamic_page_loader(label, root, left_frame, right_frame)
+            return
+        for city in region_entry["Cities"]:
+            if city["City"] == target_name:
+                notes_list = city["Notes"]
+                note_to_delete = note_id.get()
+
+                notes_list = [n for n in notes_list if int(n["id"]) != note_to_delete]
+
+                for i, n in enumerate(notes_list, 1):
+                    n["id"] = i
+
+                city["Notes"] = notes_list
+                save_json("regions.json", data)
+                popup.destroy()
+
+                if left_frame and right_frame:
+                    from functions.pages import dynamic_page_loader
+                    label = config.button_flag
+                    dynamic_page_loader(label, root, left_frame, right_frame)
+                return
+
+        for poi in region_entry["POI"]:
+            if poi["Point of Interest"] == target_name:
+                notes_list = poi["Notes"]
+                note_to_delete = note_id.get()
+
+                notes_list = [n for n in notes_list if int(n["id"]) != note_to_delete]
+
+                for i, n in enumerate(notes_list, 1):
+                    n["id"] = i
+
+                poi["Notes"] = notes_list
+                save_json("regions.json", data)
+                popup.destroy()
+
+                if left_frame and right_frame:
+                    from functions.pages import dynamic_page_loader
+                    label = config.button_flag
+                    dynamic_page_loader(label, root, left_frame, right_frame)
+                return
+
+    def on_cancel():
+        popup.destroy()
+
+    if section == region_name:
+        notes = region_entry["Notes"]
+    else:
+        notes = []
+        for city in region_entry["Cities"]:
+            if city["City"] == section:
+                notes = city["Notes"]
+                break
+        for poi in region_entry["POI"]:
+            if poi["Point of Interest"] == section:
+                notes = poi["Notes"]
+                break
+
+    if not notes:
+        show_error("No notes found.", root)
+
+    note_frame = tk.Frame(popup)
+    note_frame.pack(pady=10)
+
+    note_id = tk.IntVar(popup)
+    note_id.set(notes[0]["id"])
+
+    for note in notes:
+        rb = tk.Radiobutton(
+            note_frame,
+            text=f"{note['id']}",
+            variable=note_id,
+            value=note['id']
+        )
+        rb.pack(anchor="w")
+
+
+    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
+    submit_btn.pack(pady=10)
+    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
+    cancel_btn.pack(pady=10)
+
+def add_type(section, section_type, root, left_frame=None, right_frame=None):
+    if section_type == "city":
+        descrip = section_type
+        json_entry = "Cities"
+        addition = "City"
+    elif section_type == "poi":
+        descrip = "point of interest"
+        json_entry = "POI"
+        addition = "Point of Interest"
+
+    popup = tk.Toplevel(root)
+    popup.title(f"Add {descrip} to {section}")
+
+    instr_label = tk.Label(popup, text=f"Add {descrip} to {section}")
+    instr_label.pack(pady=10)
+
+    def on_submit():
+        name_val = name_entry.get().strip().title()
+        if not name_val:
+            show_error("Please insert a name.", root)
+            return
+
+        data = load_json("regions.json")
+
+        region_entry = data[section]
+
+        region_entry[json_entry].append({
+            addition: name_val,
+            "POI": [],
+            "Notes": []
+        })
+
+        save_json("regions.json", data)
+        popup.destroy()
+
+        if left_frame and right_frame:
+            from functions.pages import dynamic_page_loader
+            label = config.button_flag
+            dynamic_page_loader(label, root, left_frame, right_frame)
+
+    def on_cancel():
+        popup.destroy()
+
+    name_label = tk.Label(popup, text="Name:")
+    name_label.pack()
+    name_entry = tk.Entry(popup)
+    name_entry.pack()
+
+    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
+    submit_btn.pack(pady=10)
+    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
+    cancel_btn.pack(pady=10)
+
+def remove_type(section, section_type, root, left_frame=None, right_frame=None):
+    if section_type == "city":
+        descrip = section_type
+        json_entry = "Cities"
+        removal = "City"
+    elif section_type == "poi":
+        descrip = "point of interest"
+        json_entry = "POI"
+        removal = "Point of Interest"
+    popup = tk.Toplevel(root)
+    popup.title(f"Remove {descrip} from {section}")
+
+    instr_label = tk.Label(popup,
+                           text=f"Select which {descrip} you wish to delete.\nThis is a permanent action, and will delete ALL information included in that region!")
+    instr_label.pack(pady=10)
+
+    data = load_json("regions.json")
+
+    if not data:
+        show_error("No regions available to delete.", root)
+        return
+
+    region_entry = data[section]
+    locations = region_entry.get(json_entry, [])
+
+    if not locations:
+        show_error("No locations", root)
+        return
+
+    def on_submit():
+        name_val = name_entry.get()
+
+        region_entry[json_entry] = [
+            l for l in locations if l[removal] != name_val
+        ]
+
+        save_json("regions.json", data)
+        popup.destroy()
+
+        if left_frame and right_frame:
+            from functions.pages import dynamic_page_loader
+            label = config.button_flag
+            dynamic_page_loader(label, root, left_frame, right_frame)
+
+    def on_cancel():
+        popup.destroy()
+
+    name_label = tk.Label(popup, text=f"Choose a {descrip}:")
+    name_label.pack()
+    names_frame = tk.Frame(popup)
+    names_frame.pack()
+    name_entry = tk.StringVar(popup)
+    name_entry.set(locations[0][removal])
+
+    for location in locations:
+        rb = tk.Radiobutton(
+            names_frame,
+            text=location[removal],
+            variable=name_entry,
+            value=location[removal]
+        )
+        rb.pack(anchor="w")
+    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
+    submit_btn.pack(pady=10)
+    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
+    cancel_btn.pack(pady=10)
+
+def reset_settings(root, left_frame=None, right_frame=None):
+    popup = tk.Toplevel(root)
+    popup.title("Default Settings Confirmation")
+
+    instr_label = tk.Label(popup, text="This will reset Buffers to 0 and Classes to 1.\nPlease confirm.")
+    instr_label.pack(pady=10)
+
+    def on_submit():
+        data = load_json("settings.json")
+        data["Action Buffer"] = "0"
+        data["Power Buffer"] = "0"
+        data["Artificer"] = "1"
+        data["Barbarian"] = "1"
+        data["Bard"] = "1"
+        data["Cleric"] = "1"
+        data["Druid"] = "1"
+        data["Fighter"] = "1"
+        data["Monk"] = "1"
+        data["Paladin"] = "1"
+        data["Ranger"] = "1"
+        data["Rogue"] = "1"
+        data["Sorcerer"] = "1"
+        data["Warlock"] = "1"
+        data["Wizard"] = "1"
+        save_json("settings.json", data)
+
+        if left_frame and right_frame:
+            from functions.pages import settings_page
+            settings_page(root, left_frame, right_frame)
+        popup.destroy()
+
+    def on_cancel():
+        popup.destroy()
+
+    submit_btn = tk.Button(popup, text="Confirm", command=on_submit)
+    submit_btn.pack(pady=10)
+    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
+    cancel_btn.pack(pady=10)

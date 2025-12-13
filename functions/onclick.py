@@ -81,6 +81,7 @@ def on_button_click(label, root, left_frame=None, right_frame=None):
         case "Regions":
             from functions.pages import regions_base_page
             navigate_to("Regions")
+            config.last_flag = "Regions"
             config.regions_flag = label
             config.button_flag = "Regions"
             func = regions_base_page
@@ -98,7 +99,12 @@ def on_button_click(label, root, left_frame=None, right_frame=None):
             from functions.functions import remove_region
             func = remove_region
         case "Go Back":
+            config.last_flag = config.nav_stack[-1]
             previous = go_back()
+            config.button_flag = previous
+            print(f"label = {label}")
+            print(f"previous = {previous}")
+            print(f"config.nav_stack = {config.nav_stack}")
             match previous:
                 case "Main":
                     from functions.pages import main_page
@@ -109,7 +115,7 @@ def on_button_click(label, root, left_frame=None, right_frame=None):
                     func = regions_base_page
                 case _:
                     from functions.pages import dynamic_page_loader
-                    func = lambda root, left, right:dynamic_page_loader(previous, root, left, right)
+                    func = lambda r=root, lf=left_frame, rf=right_frame: dynamic_page_loader(previous, r, lf, rf)
         case "Move Member to Camp":
             from functions.functions import move_member
             config.party_flag = "Active"
@@ -120,11 +126,41 @@ def on_button_click(label, root, left_frame=None, right_frame=None):
             func = move_member
         case "Add Region Note":
             from functions.functions import add_note
-            func = add_note("Region", root, left_frame, right_frame)
+            region = config.button_flag
+            func = lambda r=root, l=left_frame, rt=right_frame: add_note(region, r, l, rt)
+        case "Remove Region Note":
+            from functions.functions import delete_note
+            region = config.button_flag
+            func = lambda r=root, l=left_frame, rt=right_frame: delete_note(region, r, l, rt)
+        case "Add City":
+            from functions.functions import add_type
+            section = config.button_flag
+            func = lambda r=root, l=left_frame, rt=right_frame: add_type(section, "city", r, l, rt)
+        case "Remove City":
+            from functions.functions import remove_type
+            section = config.button_flag
+            func = lambda r=root, l=left_frame, rt=right_frame: remove_type(section, "city", r, l, rt)
+        case "Add POI":
+            from functions.functions import add_type
+            section = config.button_flag
+            func = lambda r=root, l=left_frame, rt=right_frame: add_type(section, "poi", r, l, rt)
+        case "Remove POI":
+            from functions.functions import remove_type
+            section = config.button_flag
+            func = lambda r=root, l=left_frame, rt=right_frame: remove_type(section, "poi", r, l, rt)
+        case "Reset Settings to Default":
+            from functions.functions import reset_settings
+            func = reset_settings
         case _:
             from functions.pages import dynamic_page_loader
             navigate_to(label)
             config.button_flag = label
+            print(f"label = {label}")
+            print(f"config.nav_stack = {config.nav_stack}")
+            print(f"config.button_flag = {config.button_flag}")
+            print(f"config.nav_stack[-1] = {config.nav_stack[-1]}")
+            print(f"config.nav_stack[-2] = {config.nav_stack[-2]}")
+            print(f"config.nav_stack[-3] = {config.nav_stack[-3]}")
             func = dynamic_page_loader(label, root, left_frame, right_frame)
 
     if func:

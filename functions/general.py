@@ -3,6 +3,8 @@ import json
 import tkinter as tk
 import config
 
+from tkinter import ttk
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 JSON_DIR = "jsons"
 
@@ -98,3 +100,24 @@ def go_back():
         config.nav_stack.pop()
         return config.nav_stack[-1]
     return "Main"
+
+def line_break(frame):
+    separator = ttk.Separator(frame, orient='horizontal')
+    separator.pack(fill='x', pady=10)
+
+def find_category(name, data):
+    for region_name, region in data.items():
+
+        for city in region.get("Cities", []):
+            if city.get("City") == name:
+                return "City"
+
+        for poi in region.get("POI", []):
+            if poi.get("Point of Interest") == name:
+                return "POI"
+
+        for note in region.get("Notes", []):
+            if note.get("note") == name:
+                return "Note"
+
+    return None  # Not found

@@ -11,6 +11,7 @@ regions_flag = None
 button_flag = None
 back_flag = None
 party_flag = None
+last_flag = None
 nav_stack = ['Main']
 
 # Settings
@@ -74,6 +75,7 @@ GENERATORS_BUTTON_LABELS = [
 REGIONS_BUTTON_LABELS = [
     "Add New Region",
     "Remove Region",
+    "Go Back"
 ]
 SPECIFIC_REGION_BUTTON_LABELS = [
     "Add Region Note",
@@ -81,12 +83,17 @@ SPECIFIC_REGION_BUTTON_LABELS = [
     "Add City",
     "Remove City",
     "Add POI",
-    "Remove POI"
+    "Remove POI",
+    "Go Back"
+]
+CITY_BUTTON_LABELS = [
+    "Add City Note",
+    "Go Back"
 ]
 
 # Constants
 WINDOW_SIZE = f"{WIDTH}x{HEIGHT}"
-BUTTON_PACK_OPTIONS = {"fill": tk.X, "pady": 5, "expand": True}
+BUTTON_PACK_OPTIONS = {"fill": tk.X, "pady": 5}
 
 VALID_CLASSES = ["Artificer", "Barbarian", "Bard", "Cleric", "Druid",
                  "Fighter", "Monk", "Paladin", "Ranger", "Rogue",

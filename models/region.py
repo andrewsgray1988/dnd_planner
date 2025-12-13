@@ -1,6 +1,7 @@
 from functions.general import (
     save_json,
-    load_json
+    load_json,
+    show_error
 )
 
 class LocationBase:
@@ -76,10 +77,34 @@ class Region:
         self.poi = []
         self.notes = []
 
+    @staticmethod
+    def delete(name: str):
+        data = load_json("regions.json")
+        del data[name]
+        save_json("regions.json", data)
+
+    @classmethod
+    def load_from_file(cls, name: str):
+        data = load_json("regions.json")
+
+        if name not in data:
+            return None
+
+        region_data = data[name]
+        region = cls(name)
+
+        region.notes = region_data("Notes", [])
+
+        return region
+
     def add_city(self, city: City):
+        if not isinstance(city, City):
+            raise TypeError("Expected City Instance")
         self.cities.append(city)
 
     def add_poi(self, poi: PointOfInterest):
+        if not isinstance(poi, PointOfInterest):
+            raise TypeError("Expected POI Instance")
         self.poi.append(poi)
 
     def add_note(self, note: str):
