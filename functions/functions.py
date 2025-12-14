@@ -152,10 +152,10 @@ def delete_monster(root, left_frame=None, right_frame=None):
             popup.destroy()
             return
 
+        #Set up the next input to select transfer
         tk.Label(popup, text=f"Select a monster to move from {source.title()}:").pack(pady=10)
 
         monster_var = tk.StringVar(value=monsters[0]["name"])
-
         monster_frame = tk.Frame(popup)
         monster_frame.pack()
 
@@ -168,12 +168,14 @@ def delete_monster(root, left_frame=None, right_frame=None):
             ).pack(anchor="w")
 
         def finish_delete():
+            #Verify chosen item
             chosen_name = monster_var.get()
 
             if not chosen_name:
                 show_error("Please select a monster.", root)
                 return
 
+            #Remove the chosen item
             source_list = load_json(f"{source}.json")
 
             removed = next(
@@ -184,19 +186,20 @@ def delete_monster(root, left_frame=None, right_frame=None):
             source_list.remove(removed)
             save_json(f"{source}.json", source_list)
 
+            #Clean up
             popup.destroy()
             show_error(f"{chosen_name} removed from {source}.", root)
 
             if left_frame and right_frame:
                 from functions.pages import manage_bestiary_page
                 manage_bestiary_page(root, left_frame, right_frame)
-
+        #Button setup for final part of function
         tk.Button(popup, text="Confirm", command=finish_delete).pack(pady=10)
         tk.Button(popup, text="Cancel", command=popup.destroy).pack(pady=10)
 
         popup.grab_set()
         root.wait_window(popup)
-
+    #Button setup for first part of the function
     tk.Button(popup, text="Next", command=go_to_monster_selection).pack(pady=10)
     tk.Button(popup, text="Cancel", command=popup.destroy).pack(pady=10)
 
@@ -204,11 +207,13 @@ def delete_monster(root, left_frame=None, right_frame=None):
     root.wait_window(popup)
 
 def move_monster(root, to_location, left_frame=None, right_frame=None):
+    #Setup initial popup
     popup = tk.Toplevel(root)
     popup.title(f"Move monster to {to_location}")
 
     tk.Label(popup, text=f"Select from where").pack(pady=10)
 
+    #Set up from location
     valid_sources = [loc for loc in ("required", "random", "archive") if loc != to_location]
     source_var = tk.StringVar(value=valid_sources[0])
 
@@ -226,6 +231,7 @@ def move_monster(root, to_location, left_frame=None, right_frame=None):
         ).pack(anchor="w")
 
     def go_to_monster_selection():
+        #Verify source selection and prepare next section
         source = source_var.get()
 
         if not source:
@@ -244,6 +250,7 @@ def move_monster(root, to_location, left_frame=None, right_frame=None):
             show_error("Chosen repository is empty.", root)
             return
 
+        #Set up selection options
         monster_var = tk.StringVar(value=monsters[0]["name"])
 
         monster_frame = tk.Frame(popup)
@@ -257,6 +264,7 @@ def move_monster(root, to_location, left_frame=None, right_frame=None):
                 value=mon["name"]
             ).pack(anchor="w")
 
+        #Add Count if moving to Required
         if to_location == "required":
             tk.Label(popup, text="Encounter Count:").pack(pady=5)
             count_entry = tk.Entry(popup)
