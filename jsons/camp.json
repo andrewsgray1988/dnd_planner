@@ -1,15 +1,15 @@
 [
     {
-        "name": "Butthead",
-        "status": "Player",
+        "name": "Billy",
+        "status": "NPC",
         "armor_class": 15,
         "magic_items": 4,
-        "combat_value": 3.45,
+        "combat_value": 4.45,
         "actions": 1.5,
         "classes": [
             {
-                "name": "Barbarian",
-                "level": 3
+                "name": "Warlock",
+                "level": 4
             }
         ]
     }

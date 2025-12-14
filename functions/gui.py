@@ -103,3 +103,61 @@ def generate_buttons(root, left_scroll_frame, right_scroll_frame):
         btn = tk.Button(right_scroll_frame, text=label,
                         command=lambda l=label: on_button_click(l, root, left_scroll_frame, right_scroll_frame))
         btn.pack(fill=tk.X, padx=5, pady=5)
+
+def submit_buttons(root, popup, text, function):
+    btn_frame = tk.Frame(popup)
+    btn_frame.pack(fill="x", pady=10, padx=10)
+    tk.Button(btn_frame, text=text, command=function).pack(side="left", padx=(30, 0))
+    tk.Button(btn_frame, text="Cancel", command=popup.destroy).pack(side="right", padx=(0, 30))
+    popup.grab_set()
+    root.wait_window(popup)
+
+def close_popup_and_refresh(popup, root, left_frame, right_frame, refresh_fn):
+    popup.destroy()
+    if left_frame and right_frame:
+        refresh_fn(root, left_frame, right_frame)
+
+
+def initiate_popup(root, title, label, fields):
+    popup = tk.Toplevel(root)
+    popup.title(title)
+
+    instr_label = tk.Label(popup, text=label)
+    instr_label.pack()
+
+    entries = {}
+
+    if not fields:
+        return popup, entries
+
+    for field in fields:
+        key = field["key"]
+        label = field["label"]
+        field_type = field["type"]
+
+        tk.Label(popup, text=label).pack()
+
+        if field_type == "entry":
+            entry = tk.Entry(popup)
+            entry.pack()
+            entries[key] = entry
+        elif field_type == "radio":
+            frame = tk.Frame(popup)
+            frame.pack()
+        elif field_type == "text":
+            entry = tk.Text(popup, height=8, width=50)
+            entry.pack(pady=10)
+            entries[key] = entry
+
+            default = field.get("default", "")
+            var = tk.StringVar(popup, value=default)
+
+            for option in field["options"]:
+                tk.Radiobutton(
+                    frame,
+                    text=option.title(),
+                    variable=var,
+                    value=option
+                ).pack(anchor="w")
+            entries[key] = var
+    return popup, entries

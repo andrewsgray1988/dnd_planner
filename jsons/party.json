@@ -1,19 +1,5 @@
 [
     {
-        "name": "Billy",
-        "status": "NPC",
-        "armor_class": 15,
-        "magic_items": 4,
-        "combat_value": 4.45,
-        "actions": 1.5,
-        "classes": [
-            {
-                "name": "Warlock",
-                "level": 4
-            }
-        ]
-    },
-    {
         "name": "Derrick",
         "status": "Player",
         "armor_class": 14,

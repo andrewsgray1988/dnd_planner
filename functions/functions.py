@@ -12,7 +12,10 @@ from functions.general import (
     smart_title
 )
 from functions.gui import (
-    create_scrollable_frame
+    create_scrollable_frame,
+    submit_buttons,
+    close_popup_and_refresh,
+    initiate_popup
 )
 from config import (
     VALID_CLASSES
@@ -20,52 +23,46 @@ from config import (
 
 def add_monster(root, left_frame=None, right_frame=None):
     #Initiates the pop-up
-    popup = tk.Toplevel(root)
-    popup.title(f"Add New Monster")
-
-    instr_label = tk.Label(popup,
-                           text="Adding a monster.\nFor Challenge Rating, please put either an integer or a decimal.\n(0.25 instead of 1/4)\nFor Actions, this is the number of (non-legendary action) attacks they get per round")
-    instr_label.pack(pady=10)
-
-    #Entry Values
-    dest_label = tk.Label(popup, text="Destination:")
-    dest_label.pack()
-    dest_frame = tk.Frame(popup)
-    dest_frame.pack()
-    dest_entry = tk.StringVar(popup, value="required")
-    for v in ["Required", "Random", "Archive"]:
-        rb = tk.Radiobutton(
-            dest_frame,
-            text=v,
-            variable=dest_entry,
-            value=v.lower()
-        )
-        rb.pack(anchor="w")
-    name_label = tk.Label(popup, text="Name:")
-    name_label.pack()
-    name_entry = tk.Entry(popup)
-    name_entry.pack()
-    name_entry.focus_set()
-    cr_label = tk.Label(popup, text="Challenge Rating:")
-    cr_label.pack()
-    cr_entry = tk.Entry(popup)
-    cr_entry.pack()
-    actions_label = tk.Label(popup, text="Actions:")
-    actions_label.pack()
-    actions_entry = tk.Entry(popup)
-    actions_entry.pack()
-    count_label = tk.Label(popup, text="Encounter Count (If going to Required):")
-    count_label.pack()
-    count_entry = tk.Entry(popup)
-    count_entry.pack()
+    popup_title = "Add New Monster"
+    popup_label = "Adding a monster.\nFor Challenge Rating, please put either an integer or a decimal.\n(0.25 instead of 1/4)\nFor Actions, this is the number of (non-legendary action) attacks they get per round"
+    popup_fields = [
+        {
+            "key": "dest",
+            "label": "Destination:",
+            "type": "radio",
+            "options": ["required", "random", "archive"],
+            "default": "required"
+        },
+        {
+            "key": "name",
+            "label": "Name:",
+            "type": "entry"
+        },
+        {
+            "key": "cr",
+            "label": "Challenge Rating:",
+            "type": "entry"
+        },
+        {
+            "key": "actions",
+            "label": "Actions:",
+            "type": "entry"
+        },
+        {
+            "key": "count",
+            "label": "Encounter Count (If going to Required):",
+            "type": "entry"
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
         #Gets the entered values
-        name_val = name_entry.get().strip().title()
-        cr_val = cr_entry.get()
-        actions_val = actions_entry.get()
-        count_val = count_entry.get()
-        destination = dest_entry.get()
+        name_val = values["name"].get().strip().title()
+        cr_val = values["cr"].get()
+        actions_val = values["actions"].get()
+        count_val = values["count"].get()
+        destination = values["dest"].get()
 
         #Checks if values are blank
         if destination != "required":
@@ -109,43 +106,30 @@ def add_monster(root, left_frame=None, right_frame=None):
         new_monster.save_to_file(destination)
 
         #Closes popup and reloads page with new info
-        popup.destroy()
-        if left_frame and right_frame:
-            from functions.pages import manage_bestiary_page
-            manage_bestiary_page(root, left_frame, right_frame)
+        from functions.pages import manage_bestiary_page
+        close_popup_and_refresh(popup, root, left_frame, right_frame, manage_bestiary_page)
 
     #Command buttons
-    tk.Button(popup, text="Submit", command=on_submit).pack(pady=10)
-    tk.Button(popup, text="Cancel", command=popup.destroy).pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Confirm", on_submit)
 
 def delete_monster(root, left_frame=None, right_frame=None):
     #Initiates the pop-up
-    popup = tk.Toplevel(root)
-    popup.title(f"Delete Monster")
-
-    tk.Label(popup, text=f"Select from where").pack(pady=10)
-
-    #Sets radio buttons to select where you want to send the monster to, detecting which
-    valid_sources = ["required", "random", "archive"]
-    source_var = tk.StringVar(value=valid_sources[0])
-
-    source_frame = tk.Frame(popup)
-    source_frame.pack()
-
-    for loc in valid_sources:
-        tk.Radiobutton(
-            source_frame,
-            text=loc.title(),
-            variable=source_var,
-            value=loc
-        ).pack(anchor="w")
+    popup_title = "Delete Monster"
+    popup_label = "Select from where"
+    popup_fields = [
+        {
+            "key": "source",
+            "label": "Source:",
+            "type": "radio",
+            "options": ["required", "random", "archive"],
+            "default": "required"
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def go_to_monster_selection():
         #Sets up the source (from) and delete previous pop-up. Checks if the source has any information to transfer
-        source = source_var.get()
+        source = values["source"].get()
         for w in popup.winfo_children():
             w.destroy()
 
@@ -190,62 +174,39 @@ def delete_monster(root, left_frame=None, right_frame=None):
             save_json(f"{source}.json", source_list)
 
             #Clean up
-            popup.destroy()
+            from functions.pages import manage_bestiary_page
+            close_popup_and_refresh(popup, root, left_frame, right_frame, manage_bestiary_page)
             show_error(f"{chosen_name} removed from {source}.", root)
 
-            if left_frame and right_frame:
-                from functions.pages import manage_bestiary_page
-                manage_bestiary_page(root, left_frame, right_frame)
         #Button setup for final part of function
-        tk.Button(popup, text="Confirm", command=finish_delete).pack(pady=10)
-        tk.Button(popup, text="Cancel", command=popup.destroy).pack(pady=10)
-
-        popup.grab_set()
-        root.wait_window(popup)
+        submit_buttons(root, popup, "Confirm", finish_delete)
     #Button setup for first part of the function
-    tk.Button(popup, text="Next", command=go_to_monster_selection).pack(pady=10)
-    tk.Button(popup, text="Cancel", command=popup.destroy).pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Next", go_to_monster_selection)
 
 def move_monster(root, to_location, left_frame=None, right_frame=None):
     #Setup initial popup
-    popup = tk.Toplevel(root)
-    popup.title(f"Move monster to {to_location}")
-
-    tk.Label(popup, text=f"Select from where").pack(pady=10)
-
-    #Set up from location
+    # Initiates the pop-up
     valid_sources = [loc for loc in ("required", "random", "archive") if loc != to_location]
-    source_var = tk.StringVar(value=valid_sources[0])
-
-    source_frame = tk.Frame(popup)
-    source_frame.pack()
-
-    for loc in valid_sources:
-        if loc == to_location:
-            continue
-        tk.Radiobutton(
-            source_frame,
-            text=loc.title(),
-            variable=source_var,
-            value=loc
-        ).pack(anchor="w")
+    popup_title = f"Move monster to {to_location}"
+    popup_label = "Select from where"
+    popup_fields = [
+        {
+            "key": "source",
+            "label": "Source:",
+            "type": "radio",
+            "options": valid_sources,
+            "default": valid_sources[0]
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def go_to_monster_selection():
         #Verify source selection and prepare next section
-        source = source_var.get()
-
-        if not source:
-            show_error("Please select a source list.", root)
-            return
-
+        source = values["source"].get()
         for w in popup.winfo_children():
             w.destroy()
 
         tk.Label(popup, text=f"Select a monster to move from {source.title()}:").pack(pady=10)
-
         monsters = load_json(f"{source}.json")
 
         if not monsters:
@@ -327,48 +288,29 @@ def move_monster(root, to_location, left_frame=None, right_frame=None):
             config.bestiary_flag = temp_flag
 
             #Cleanup and reload page
-            popup.destroy()
+            from functions.pages import manage_bestiary_page
+            close_popup_and_refresh(popup, root, left_frame, right_frame, manage_bestiary_page)
             show_error(f"{chosen_name} moved from {source} to {to_location}.", root)
 
-            if left_frame and right_frame:
-                for widget in right_frame.winfo_children():
-                    widget.destroy()
-                from functions.pages import manage_bestiary_page
-                manage_bestiary_page(root, left_frame, right_frame)
-
         #Command buttons for the second part of the functions
-        tk.Button(popup, text="Transfer", command=finish_transfer).pack(pady=10)
-        tk.Button(popup, text="Cancel", command=popup.destroy).pack(pady=10)
-
-        popup.grab_set()
-        root.wait_window(popup)
+        submit_buttons(root, popup, "Submit", finish_transfer)
 
     #Command buttons for the first part of the function
-    tk.Button(popup, text="Next", command=go_to_monster_selection).pack(pady=10)
-    tk.Button(popup, text="Cancel", command=popup.destroy).pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Next", go_to_monster_selection)
 
 def adjust_setting(root, left_frame=None, right_frame=None):
     #Load the popup for the function
-    popup = tk.Toplevel(root)
-    popup.title("Adjust Settings")
+    popup_title = "Adjust Settings"
+    popup_label = "Adjust settings below.\nModify any value and click Submit to save changes."
+    popup, _ = initiate_popup(root, popup_title, popup_label, None)
 
     settings_data = load_json("settings.json")
     entry_widgets = {}
 
-    instr_label = tk.Label(
-        popup,
-        text="Adjust settings below.\nModify any value and click Submit to save changes."
-    )
-    instr_label.pack(pady=10)
-
-    scroll_frame = create_scrollable_frame(popup)
 
     #Fill the frame with the settings
     for setting, value in settings_data.items():
-        row = tk.Frame(scroll_frame)
+        row = tk.Frame(popup)
         row.pack(fill="x", pady=2)
 
         label = tk.Label(row, text=f"{setting}:", width=20, anchor="w")
@@ -381,15 +323,18 @@ def adjust_setting(root, left_frame=None, right_frame=None):
         entry_widgets[setting] = entry
 
     def on_submit():
+        #Update settings
         new_values = {}
 
         for setting, entry in entry_widgets.items():
             raw = entry.get().strip()
 
+            #Catch any that are empty
             if raw == "":
                 show_error(f"{setting} cannot be empty.", root)
                 return
 
+            #Will convert appropriately to float or int
             try:
                 if "." in raw:
                     new_values[setting] = float(raw)
@@ -399,42 +344,61 @@ def adjust_setting(root, left_frame=None, right_frame=None):
                 show_error(f"Value for {setting} must be a number.", root)
                 return
 
+        #Cleanup and reset page
         save_json("settings.json", new_values)
+        from functions.pages import settings_page
+        close_popup_and_refresh(popup, root, left_frame, right_frame, settings_page)
         popup.destroy()
 
-        if left_frame and right_frame:
-            from functions.pages import settings_page
-            settings_page(root, left_frame, right_frame)
-
-    def on_cancel():
-        popup.destroy()
-
-    btn_frame = tk.Frame(popup)
-    btn_frame.pack(pady=10)
-
-    submit_btn = tk.Button(btn_frame, text="Submit", command=on_submit)
-    submit_btn.pack(side="left", padx=10)
-
-    cancel_btn = tk.Button(btn_frame, text="Cancel", command=on_cancel)
-    cancel_btn.pack(side="left", padx=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Submit", on_submit)
 
 def add_member(root, left_frame=None, right_frame=None):
-    popup = tk.Toplevel(root)
-    popup.title("Add New Party Member")
-
-    instr_label = tk.Label(popup, text="Please enter the character's details.\nIf the character is multi-classed, put one\nand then use Update Member to add other classes.")
-    instr_label.pack(pady=10)
+    #Initiate popup and create entry
+    popup_title = "Add New Party Member"
+    popup_label = "Please enter the character's details.\nIf the character is multi-classed, put one\nand then use Update Member to add other classes."
+    popup_fields = [
+        {
+            "key": "name",
+            "label": "Name:",
+            "type": "entry"
+        },
+        {
+            "key": "status",
+            "label": "Status:",
+            "type": "radio",
+            "options": ["Player", "NPC"],
+            "default": "Player"
+        },
+        {
+            "key": "ac",
+            "label": "Armor Class:",
+            "type": "entry"
+        },
+        {
+            "key": "items",
+            "label": "Combat Magic Item Count",
+            "type": "entry"
+        },
+        {
+            "key": "class",
+            "label": "Character Class:",
+            "type": "entry"
+        },
+        {
+            "key": "level",
+            "label": "Class Level:",
+            "type": "entry"
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
-        name_val = name_entry.get().strip().title()
-        status_val = status_var.get()
-        ac_val = ac_entry.get()
-        magic_items_val = items_entry.get()
-        class_val = class_entry.get().strip().title()
-        level_val = level_entry.get()
+        name_val = values["name"].get().strip().title()
+        status_val = values["status"].get()
+        ac_val = values["ac"].get()
+        magic_items_val = values["items"].get()
+        class_val = values["class"].get().strip().title()
+        level_val = values["level"].get()
 
         class_val_input = class_val.lower()
         valid_map = {
@@ -483,79 +447,45 @@ def add_member(root, left_frame=None, right_frame=None):
         new_player.get_action_count()
         new_player.save_to_file()
 
+        from functions.pages import manage_party_page
+        close_popup_and_refresh(popup, root, left_frame, right_frame, manage_party_page)
         popup.destroy()
 
-        if left_frame and right_frame:
-            from functions.pages import manage_party_page
-            manage_party_page(root, left_frame, right_frame)
-
-    def on_cancel():
-        popup.destroy()
-
-    name_label = tk.Label(popup, text="Name:")
-    name_label.pack()
-    name_entry = tk.Entry(popup)
-    name_entry.pack()
-    name_entry.focus_set()
-    status_label = tk.Label(popup, text="Status:")
-    status_label.pack()
-    status_var = tk.StringVar(value="Player")  # default is Player
-    player_radio = tk.Radiobutton(popup, text="Player", variable=status_var, value="Player")
-    player_radio.pack()
-    npc_radio = tk.Radiobutton(popup, text="NPC", variable=status_var, value="NPC")
-    npc_radio.pack()
-    ac_label = tk.Label(popup, text="Armor Class:")
-    ac_label.pack()
-    ac_entry = tk.Entry(popup)
-    ac_entry.pack()
-    items_label = tk.Label(popup, text="Combat Magic Item Count:")
-    items_label.pack()
-    items_entry = tk.Entry(popup)
-    items_entry.pack()
-    class_label = tk.Label(popup, text="Character Class:")
-    class_label.pack()
-    class_entry = tk.Entry(popup)
-    class_entry.pack()
-    level_label = tk.Label(popup, text="Class Level:")
-    level_label.pack()
-    level_entry = tk.Entry(popup)
-    level_entry.pack()
-    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Submit", on_submit)
 
 def delete_member(root, left_frame=None, right_frame=None):
-    popup = tk.Toplevel(root)
-    popup.title("Delete Party Member")
-
-    instr_label = tk.Label(popup, text="Please type the name of the character you wish to delete.\nThis is a permanent action, and they will have to be added again if needed!")
-    instr_label.pack(pady=10)
-
+    # Initiate popup and create entry
     players_list = load_json("party.json")
     camp_list = load_json("camp.json")
-    button_list = players_list + camp_list
+    button_list = [p["name"] for p in players_list] + [c["name"] for c in camp_list]
 
     if not button_list:
         show_error("No players available.", root)
         return
 
+    popup_title = "Delete Party Member"
+    popup_label = "Please type the name of the character you wish to delete.\nThis is a permanent action, and they will have to be added again if needed!"
+    popup_fields = [
+        {
+            "key": "name",
+            "label": "Name:",
+            "type": "radio",
+            "options": button_list,
+            "default": button_list[0]
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
+
     def on_submit():
-        name_val = name_entry.get()
+        name_val = values["name"].get()
 
         found = False
         for player in players_list:
             if player["name"].lower() == name_val.lower():
                 players_list.remove(player)
                 save_json("party.json", players_list)
-                popup.destroy()
-
-                if left_frame and right_frame:
-                    from functions.pages import manage_party_page
-                    manage_party_page(root, left_frame, right_frame)
+                from functions.pages import manage_party_page
+                close_popup_and_refresh(popup, root, left_frame, right_frame, manage_party_page)
                 found = True
                 break
 
@@ -564,66 +494,71 @@ def delete_member(root, left_frame=None, right_frame=None):
                 if player["name"].lower() == name_val.lower():
                     camp_list.remove(player)
                     save_json("camp.json", camp_list)
-                    popup.destroy()
-
-                    if left_frame and right_frame:
-                        from functions.pages import manage_party_page
-                        manage_party_page(root, left_frame, right_frame)
-                    found = True
+                    from functions.pages import manage_party_page
+                    close_popup_and_refresh(popup, root, left_frame, right_frame, manage_party_page)
                     break
 
             if not found:
                 show_error(f"{name_val} not found in current party.", root)
                 return
 
-    def on_cancel():
-        popup.destroy()
-
-    name_label = tk.Label(popup, text="Name:")
-    name_label.pack()
-    names_frame = tk.Frame(popup)
-    names_frame.pack()
-    name_entry = tk.StringVar(popup)
-    name_entry.set(button_list[0])
-
-    for player in button_list:
-        rb = tk.Radiobutton(
-            names_frame,
-            text=player["name"],
-            variable=name_entry,
-            value=player["name"]
-        )
-        rb.pack(anchor="w")
-    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Submit", on_submit)
 
 def update_member(root, left_frame=None, right_frame=None):
-    popup = tk.Toplevel(root)
-    popup.title("Update Party Member")
-
-    instr_label = tk.Label(popup, text="Which character would you like to update, and what?\nIf adding a multiclass, you can input that here under the Character Class and Level.\nIf a section does not need to be updated, it can be left blank!")
-    instr_label.pack(pady=10)
-
     players_list = load_json("party.json")
     camp_list = load_json("camp.json")
-    button_list = players_list + camp_list
+    button_list = [p["name"] for p in players_list] + [c["name"] for c in camp_list]
 
     if not button_list:
         show_error("No characters in party or camp.", root)
         return
+    popup_title = "Update Party Member"
+    popup_label = "Which character would you like to update, and what?\nIf adding a multiclass, you can input that here under the Character Class and Level.\nIf a section does not need to be updated, it can be left blank!"
+    popup_fields = [
+        {
+            "key": "name",
+            "label": "Name:",
+            "type": "radio",
+            "options": button_list,
+            "default": button_list[0]
+        },
+        {
+            "key": "status",
+            "label": "Status:",
+            "type": "radio",
+            "options": ["Player", "NPC"],
+            "default": "Player"
+        },
+        {
+            "key": "ac",
+            "label": "Armor Class:",
+            "type": "entry"
+        },
+        {
+            "key": "items",
+            "label": "Combat Magic Item Count",
+            "type": "entry"
+        },
+        {
+            "key": "class",
+            "label": "Character Class:",
+            "type": "entry"
+        },
+        {
+            "key": "level",
+            "label": "Class Level:",
+            "type": "entry"
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
-        name_val = name_entry.get().strip().title()
-        status_val = status_var.get()
-        ac_val = ac_entry.get()
-        magic_items_val = items_entry.get()
-        class_val = class_entry.get().strip().title()
-        level_val = level_entry.get()
+        name_val = values["name"].get().strip().title()
+        status_val = values["status"].get()
+        ac_val = values["ac"].get()
+        magic_items_val = values["items"].get()
+        class_val = values["class"].get().strip().title()
+        level_val = values["level"].get()
 
         valid_map = {
             "artificer": Artificer,
@@ -687,15 +622,11 @@ def update_member(root, left_frame=None, right_frame=None):
 
                 save_json("party.json", players_list)
 
-                popup.destroy()
-
-                if left_frame and right_frame:
-                    from functions.pages import manage_party_page
-                    manage_party_page(root, left_frame, right_frame)
+                from functions.pages import manage_party_page
+                close_popup_and_refresh(popup, root, left_frame, right_frame, manage_party_page)
                 break
 
         if not found:
-
             found = False
             for player in camp_list:
                 if player["name"].lower() == name_val.lower():
@@ -733,66 +664,14 @@ def update_member(root, left_frame=None, right_frame=None):
 
                     save_json("camp.json", camp_list)
 
-                    popup.destroy()
-
-                    if left_frame and right_frame:
-                        from functions.pages import manage_party_page
-                        manage_party_page(root, left_frame, right_frame)
+                    from functions.pages import manage_party_page
+                    close_popup_and_refresh(popup, root, left_frame, right_frame, manage_party_page)
                     break
-
             if not found:
                 show_error(f"No player named '{name_val}' found in party.", root)
                 return
 
-    def on_cancel():
-        popup.destroy()
-
-
-    name_label = tk.Label(popup, text="Name:")
-    name_label.pack()
-    names_frame = tk.Frame(popup)
-    names_frame.pack()
-    name_entry = tk.StringVar(popup)
-    name_entry.set(button_list[0])
-
-    for player in button_list:
-        rb = tk.Radiobutton(
-            names_frame,
-            text=player["name"],
-            variable=name_entry,
-            value=player
-        )
-        rb.pack(anchor="w")
-    status_label = tk.Label(popup, text="Status:")
-    status_label.pack()
-    status_var = tk.StringVar(value="Player")
-    player_radio = tk.Radiobutton(popup, text="Player", variable=status_var, value="Player")
-    player_radio.pack()
-    npc_radio = tk.Radiobutton(popup, text="NPC", variable=status_var, value="NPC")
-    npc_radio.pack()
-    ac_label = tk.Label(popup, text="Armor Class:")
-    ac_label.pack()
-    ac_entry = tk.Entry(popup)
-    ac_entry.pack()
-    items_label = tk.Label(popup, text="Combat Magic Item Count:")
-    items_label.pack()
-    items_entry = tk.Entry(popup)
-    items_entry.pack()
-    class_label = tk.Label(popup, text="Character Class:")
-    class_label.pack()
-    class_entry = tk.Entry(popup)
-    class_entry.pack()
-    level_label = tk.Label(popup, text="Class Level:")
-    level_label.pack()
-    level_entry = tk.Entry(popup)
-    level_entry.pack()
-    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Submit", on_submit)
 
 def move_member(root, left_frame=None, right_frame=None):
     if config.party_flag == "Active":
@@ -806,71 +685,61 @@ def move_member(root, left_frame=None, right_frame=None):
         from_json = "camp.json"
         to_json = "party.json"
 
-    party_list_from = load_json(from_json)
+    party_list_from_raw = load_json(from_json)
+    party_list_from = [p["name"] for p in party_list_from_raw]
     party_list_to = load_json(to_json)
 
     if not party_list_from:
         show_error(f"No characters found in {from_var}", root)
         return
 
-    popup = tk.Toplevel(root)
-    popup.title(f"Move character from {from_var} to {to_var}")
-
-    tk.Label(popup, text=f"Please type the name of the character you wish to move to {to_var}.").pack(
-        pady=10)
-
-    name_label = tk.Label(popup, text="Name:")
-    name_label.pack()
-    names_frame = tk.Frame(popup)
-    names_frame.pack()
-    name_entry = tk.StringVar(popup)
-    name_entry.set(party_list_from[0])
-
-    for player in party_list_from:
-        rb = tk.Radiobutton(
-            names_frame,
-            text=player["name"],
-            variable=name_entry,
-            value=player["name"]
-        )
-        rb.pack(anchor="w")
+    popup_title = f"Move character from {from_var} to {to_var}"
+    popup_label = f"Please type the name of the character you wish to move to {to_var}."
+    popup_fields = [
+        {
+            "key": "name",
+            "label": "Name:",
+            "type": "radio",
+            "options": party_list_from,
+            "default": party_list_from[0]
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
-        name_val = name_entry.get()
+        name_val = values["name"].get()
 
         temp_char = None
-        for char in party_list_from:
+        for char in party_list_from_raw:
             if char["name"].lower() == name_val.lower():
                 temp_char = char
-                party_list_from.remove(char)
+                party_list_from_raw.remove(char)
 
         party_list_to.append(temp_char)
 
-        save_json(from_json, party_list_from)
+        save_json(from_json, party_list_from_raw)
         save_json(to_json, party_list_to)
 
-        popup.destroy()
+        from functions.pages import manage_party_page
+        close_popup_and_refresh(popup, root, left_frame, right_frame, manage_party_page)
         show_error(f"{name_val} has been moved to {to_var}", root)
 
-        if left_frame and right_frame:
-            from functions.pages import manage_party_page
-            manage_party_page(root, left_frame, right_frame)
-
-    tk.Button(popup, text="Submit", command=on_submit).pack(pady=10)
-    tk.Button(popup, text="Cancel", command=popup.destroy).pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Submit", on_submit)
 
 def add_new_region(root, left_frame=None, right_frame=None):
-    popup = tk.Toplevel(root)
-    popup.title("Adding New Region")
-
-    instr_label = tk.Label(popup,text="Name the New Region")
-    instr_label.pack(pady=10)
+    popup_title = "Adding New Region"
+    popup_label = "Name the New Region"
+    popup_fields = [
+        {
+            "key": "name",
+            "label": "Name:",
+            "type": "entry"
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
-        name_val = name_entry.get().strip().title()
+        name_val = values["name"].get().strip().title()
 
         if not name_val:
             show_error("Please add a name to continue.", root)
@@ -885,44 +754,33 @@ def add_new_region(root, left_frame=None, right_frame=None):
         region = Region(name_val)
         region.save_to_file()
 
-        popup.destroy()
+        from functions.pages import regions_base_page
+        close_popup_and_refresh(popup, root, left_frame, right_frame, regions_base_page)
 
-        if left_frame and right_frame:
-            from functions.pages import regions_base_page
-            regions_base_page(root, left_frame, right_frame)
-
-    def on_cancel():
-        popup.destroy()
-
-    name_label = tk.Label(popup, text="Name:")
-    name_label.pack()
-    name_entry = tk.Entry(popup)
-    name_entry.pack()
-    name_entry.focus_set()
-    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Submit", on_submit)
 
 def remove_region(root, left_frame=None, right_frame=None):
-    popup = tk.Toplevel(root)
-    popup.title("Delete Region")
-
-    instr_label = tk.Label(popup,
-                           text="Select which region you wish to delete.\nThis is a permanent action, and will delete ALL information included in that region!")
-    instr_label.pack(pady=10)
-
     regions = load_json("regions.json")
-
     if not regions:
         show_error("No regions available to delete.", root)
         return
+    regions_list = [r["name"] for r in regions]
+
+    popup_title = "Delete Region"
+    popup_label = "Select which region you wish to delete.\nThis is a permanent action, and will delete ALL information included in that region!"
+    popup_fields = [
+        {
+            "key": "name",
+            "label": "Choose a Region:",
+            "type": "radio",
+            "options": regions_list,
+            "default": regions_list[0]
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
-        name_val = name_entry.get()
+        name_val = values["name"].get()
 
         if name_val not in regions:
             show_error("Region does not exist.", root)
@@ -930,52 +788,26 @@ def remove_region(root, left_frame=None, right_frame=None):
 
         del regions[name_val]
         save_json("regions.json", regions)
-        popup.destroy()
 
-        if left_frame and right_frame:
-            from functions.pages import regions_base_page
-            regions_base_page(root, left_frame, right_frame)
+        from functions.pages import regions_base_page
+        close_popup_and_refresh(popup, root, left_frame, right_frame, regions_base_page)
 
-    def on_cancel():
-        popup.destroy()
-
-    first_region = next(iter(regions))
-
-    name_label = tk.Label(popup, text="Choose a Region:")
-    name_label.pack()
-    names_frame = tk.Frame(popup)
-    names_frame.pack()
-    name_entry = tk.StringVar(popup)
-    name_entry.set(first_region)
-
-    for region_name in regions:
-        rb = tk.Radiobutton(
-            names_frame,
-            text=region_name,
-            variable=name_entry,
-            value=region_name
-        )
-        rb.pack(anchor="w")
-    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Submit", on_submit)
 
 def add_note(section, root, left_frame=None, right_frame=None):
-    popup = tk.Toplevel(root)
-    popup.title(f"Add {section} Note")
-
-    instr_label = tk.Label(popup, text=f"Add Note to {section}")
-    instr_label.pack(pady=10)
-
-    text_box = tk.Text(popup, height=8, width=50)
-    text_box.pack(pady=10)
+    popup_title = f"Add {section} Note"
+    popup_label = f"Add Note to {section}"
+    popup_fields = [
+        {
+            "key": "note",
+            "label": "Please insert a note.",
+            "type": "text",
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
-        note_text = text_box.get("1.0", tk.END).strip()
+        note_text = values["note"].get("1.0", tk.END).strip()
         if not note_text:
             show_error("Please insert a note.", root)
             return
@@ -992,24 +824,14 @@ def add_note(section, root, left_frame=None, right_frame=None):
             region.add_note(note_text)
         else:
             pass
-        popup.destroy()
 
-        if left_frame and right_frame:
-            from functions.pages import dynamic_page_loader
-            label = config.button_flag
-            dynamic_page_loader(label, root, left_frame, right_frame)
+        from functions.pages import dynamic_page_loader
+        label = config.button_flag
+        close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                lambda r, lf, rf: dynamic_page_loader(label, r, lf, rf))
 
-    def on_cancel():
-        popup.destroy()
+    submit_buttons(root, popup, "Submit", on_submit)
 
-    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
-    
 def delete_note(section, root, left_frame=None, right_frame=None):
     if config.last_flag == "Regions":
         region_name = section
