@@ -73,28 +73,19 @@ def generate_buttons(root, left_scroll_frame, right_scroll_frame):
 
     data = load_json("regions.json")
     items_to_list = []
-    current = config.button_flag
+    current_name = config.nav_stack[-1]
 
-    if config.nav_stack [-1] == "Regions" or config.nav_stack[-2] == "Regions":
+    if current_name == "Regions":
         items_to_list = list(data.keys())
-    elif config.nav_stack[-3] == "Regions":
-        item_type = find_category(current, data)
-        region_name = config.nav_stack[-2]
-        if item_type == "City":
-            region_data = next(c for c in data[region_name]["Cities"] if c["City"] == name)
-        elif item_type == "POI":
-            region_data = next(p for p in data[region_name]["POI"] if p["Point of Interest"] == name)
-    elif config.nav_stack[-4] == "Regions":
-        pass
-        """
-        items_to_list = [c["City"] for c in region_data["Cities"]]
-        items_to_list += [p["Point of Interest"] for p in region_data["POI"]]
-
-        for city in region_data["Cities"]:
-            if city["City"] == current:
-                items_to_list = [p["Point of Interest"] for p in city["POI"]]
-                break
-        """
+    elif len(config.nav_stack) >= 2 and config.nav_stack[-2] == "Regions":
+        current = data.get(current_name)
+        items_to_list = []
+        cities = current.get("Cities", [])
+        if cities:
+            items_to_list += [c["City"] for c in current["Cities"]]
+        pois = current.get("Points Of Interest", [])
+        if pois:
+            items_to_list += [p["POI"] for p in current["Points Of Interest"]]
     elif config.nav_stack[-3] == "Regions":
         pass
 

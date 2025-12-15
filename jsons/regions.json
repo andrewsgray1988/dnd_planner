@@ -1,21 +1,26 @@
 {
     "California": {
         "Region": "California",
+        "Description": "This description is updated",
         "Cities": [
             {
                 "City": "Los Angeles",
-                "Information": "",
-                "Places of Interest": [],
+                "Description": "Satan's butthole itself, now with new McDonalds. And a burger king",
+                "Places": [],
                 "Shops": [],
                 "Persons of Interest": [],
-                "Notes": []
+                "Notes": [
+                    {
+                        "id": 1,
+                        "note": "Here's a note"
+                    }
+                ]
             }
         ],
-        "POI": [
+        "Points Of Interest": [
             {
-                "Point of Interest": "Jon's Cave",
-                "Information": "",
-                "Theme": "",
+                "POI": "Hollywood",
+                "Description": "Where souls go to die. Or succeed wildly",
                 "Effects": [],
                 "Persons of Interest": [],
                 "Notes": []
@@ -24,7 +29,11 @@
         "Notes": [
             {
                 "id": 1,
-                "note": "Here's another note"
+                "note": "This is a note"
+            },
+            {
+                "id": 2,
+                "note": "Third note"
             }
         ]
     }

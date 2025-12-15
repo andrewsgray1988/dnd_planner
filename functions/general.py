@@ -3,7 +3,7 @@ import json
 import tkinter as tk
 import config
 
-from tkinter import ttk
+from tkinter import ttk, font
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 JSON_DIR = "jsons"
@@ -106,21 +106,24 @@ def line_break(frame):
     separator.pack(fill='x', pady=10)
 
 def find_category(name, data):
-    for region_name, region in data.items():
+    region_name = config.regions_flag
+    region = data.get(region_name)
+    if not region:
+        return None
 
-        for city in region.get("Cities", []):
-            if city.get("City") == name:
-                return "City"
+    for city in region.get("Cities", []):
+        if city.get("City") == name:
+            return "City"
 
-        for poi in region.get("POI", []):
-            if poi.get("Point of Interest") == name:
-                return "POI"
+    for poi in region.get("Points Of Interest", []):
+        if poi.get("POI") == name:
+            return "POI"
 
-        for note in region.get("Notes", []):
-            if note.get("note") == name:
-                return "Note"
+    for note in region.get("Notes", []):
+        if note.get("note") == name:
+            return "note"
 
-    return None  # Not found
+    return "Region"
 
 def smart_title(text: str) -> str:
     words = text.strip().split()
@@ -134,3 +137,37 @@ def smart_title(text: str) -> str:
             result.append(word.capitalize())
 
     return " ".join(result)
+
+def populate_info(data, section, subsection, pad, scroll_frame):
+    region_font = font.Font(size=12, weight="bold")
+    header_text = str(section)
+    count = 1
+    header_label = tk.Label(scroll_frame, text=header_text, font=region_font, anchor="nw", justify="left")
+    header_label.pack(fill=tk.BOTH, expand=True)
+    for d in data[section]:
+        ins_text = f'{count}: {d[subsection]}'
+        label = tk.Label(scroll_frame, text=ins_text, anchor="nw", justify="left")
+        label.pack(fill=tk.BOTH, expand=True, padx=(pad, 0))
+        count += 1
+
+def type_flags(name, data):
+    regions_flag = config.regions_flag
+    region_data = data.get(regions_flag)
+    item_type = find_category(name, data)
+    item_data = region_data
+
+    match item_type:
+        case "City":
+            for city in region_data.get("Cities", []):
+                if city.get("City") == name:
+                    item_data = city
+                    break
+        case "POI":
+            for poi in region_data.get("Points Of Interest", []):
+                if poi.get("POI") == name:
+                    item_data = poi
+                    break
+        case _:
+            print(f"item_type = {item_type} and failed the cases.")
+
+    return item_data

@@ -1,6 +1,7 @@
 import config
 import tkinter as tk
 
+from tkinter import font
 from functions.gui import (
     initiate_page,
     initiate_buttons,
@@ -13,7 +14,9 @@ from config import (
     GENERATORS_BUTTON_LABELS,
     SETTINGS_BUTTON_LABELS,
     REGIONS_BUTTON_LABELS,
-    SPECIFIC_REGION_BUTTON_LABELS
+    SPECIFIC_REGION_BUTTON_LABELS,
+    CITY_BUTTON_LABELS,
+    POI_BUTTON_LABELS
 )
 from text import (
     MAIN_PAGE_TEXT,
@@ -25,12 +28,12 @@ from text import (
     GENERATORS_PAGE_BODY_TEXT,
     SETTINGS_TEXT,
     REGIONS_TEXT,
-    REGIONS_BODY_TEXT
 )
 from functions.general import (
     load_json,
     line_break,
-    find_category
+    find_category,
+    populate_info
 )
 
 def main_page(root, left_scroll_frame, right_scroll_frame):
@@ -156,60 +159,69 @@ def settings_page(root, left_frame, right_frame):
             tk.Label(frame, text="Class placeholder", anchor="w").pack(fill="x", padx=15)
     initiate_buttons(root, left_frame, right_frame, SETTINGS_BUTTON_LABELS)
 
-def regions_base_page(root, left_frame, right_frame):
-    scroll_frame = initiate_page(root, left_frame, "Regions Page", REGIONS_TEXT)
-
-    placeholder_label = tk.Label(scroll_frame, text=REGIONS_BODY_TEXT, anchor="nw", justify="left")
-    placeholder_label.pack(fill=tk.BOTH, expand=True)
-
-    initiate_buttons(root, left_frame, right_frame, REGIONS_BUTTON_LABELS)
-    generate_buttons(root, left_frame, right_frame)
-
 def dynamic_page_loader(name, root, left_frame, right_frame):
     data = load_json("regions.json")
+    region_font = font.Font(size=12, weight="bold")
+
+    def remaining_layout():
+        pass
     if config.nav_stack[-1] == "Regions":
-        item_type = None
-        region_data = data[name]
+        buttons = REGIONS_BUTTON_LABELS
+        header = REGIONS_TEXT
+        def remaining_layout():
+            for region_name, region_data in data.items():
+                region_label = tk.Label(scroll_frame, text=region_name, font=region_font, anchor="nw", justify="left")
+                region_label.pack(fill=tk.BOTH, expand=True)
+                desc_label = tk.Label(scroll_frame, text=region_data["Description"], anchor="nw", justify="left",
+                                      wraplength=500)
+                desc_label.pack(fill=tk.BOTH, expand=True, padx=(20, 0))
     elif config.nav_stack[-2] == "Regions":
-        item_type = find_category(name, data)
-        pass
-    elif config.nav_stack[-3] == "Regions":
-        item_type = find_category(name, data)
-        region_name = config.nav_stack[-2]
-        if item_type == "City":
-            region_data = next(c for c in data[region_name]["Cities"] if c["City"] == name)
-        elif item_type == "POI":
-            region_data = next(p for p in data[region_name]["POI"] if p["Point of Interest"] == name)
+        buttons = SPECIFIC_REGION_BUTTON_LABELS
+        region_name = config.nav_stack[-1]
+        region_data = data[region_name]
+        header = region_data["Description"]
+        def remaining_layout():
+            notes = region_data.get("Notes", [])
+            if notes:
+                populate_info(region_data, "Notes", "note", 20, scroll_frame)
+            cities = region_data.get("Cities", [])
+            if cities:
+                populate_info(region_data, "Cities", "City", 20, scroll_frame)
+            pois = region_data.get("Points Of Interest", [])
+            if pois:
+                populate_info(region_data, "Points Of Interest", "POI", 20, scroll_frame)
+    else:
+        info_name = config.regions_flag
+        info_type = find_category(name, {info_name: data[info_name]})
+        region_data = data[info_name]
+        item_data = None
 
-    scroll_frame = initiate_page(root, left_frame, f"{name} Page", "")
+        match info_type:
+            case "City":
+                for city in region_data.get("Cities", []):
+                    if city["City"] == name:
+                        item_data = city
+                        break
+                if not item_data:
+                    return
 
-    notes = region_data.get("Notes", [])
-    notes_label = tk.Label(scroll_frame, text="Notes:", font=("Arial", 10, "bold"))
-    notes_label.pack(anchor="w", pady=(10, 2))
+                buttons = CITY_BUTTON_LABELS
+                header = item_data.get("Description", "")
 
-    if notes:
-        for note in notes:
-            tk.Label(scroll_frame, text=f"{note['id']}. {note['note']}").pack(anchor="w", padx=10)
+                def remaining_layout():
+                    notes = item_data.get("Notes", [])
+                    if notes:
+                        populate_info(item_data, "Notes", "note", 20, scroll_frame)
+                    shops = item_data.get("Shops", [])
+                    if shops:
+                        populate_info(item_data, "Shops", "Shop", 20, scroll_frame)
+                    pois = item_data.get("Places", [])
+                    if pois:
+                        populate_info(item_data, "Places", "Place", 20, scroll_frame)
 
-    if not item_type:
-        cities = region_data.get("Cities", [])
-        cities_label = tk.Label(scroll_frame, text="Cities:", font=("Arial", 10, "bold"))
-        cities_label.pack(anchor="w", pady=(10, 2))
+    scroll_frame = initiate_page(root, left_frame, f"{name} Page", header)
 
-        if cities:
-            for city in cities:
-                tk.Label(scroll_frame, text=f"{city.get('City', 'Unnamed City')}").pack(anchor="w", padx=10)
+    remaining_layout()
 
-        points = region_data.get("POI", [])
-        points_label = tk.Label(scroll_frame, text="Points of Interest:", font=("Arial", 10, "bold"))
-        points_label.pack(anchor="w", pady=(10, 2))
-
-        if points:
-            for point in points:
-                tk.Label(scroll_frame, text=f"{point.get('Point of Interest', 'Unnamed POI')}").pack(anchor="w", padx=10)
-
-        initiate_buttons(root, left_frame, right_frame, SPECIFIC_REGION_BUTTON_LABELS)
-    elif item_type == "City":
-        pass
-
+    initiate_buttons(root, left_frame, right_frame, buttons)
     generate_buttons(root, left_frame, right_frame)

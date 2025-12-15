@@ -9,7 +9,9 @@ from functions.general import (
     show_error,
     load_json,
     save_json,
-    smart_title
+    smart_title,
+    find_category,
+    type_flags
 )
 from functions.gui import (
     create_scrollable_frame,
@@ -734,12 +736,18 @@ def add_new_region(root, left_frame=None, right_frame=None):
             "key": "name",
             "label": "Name:",
             "type": "entry"
+        },
+        {
+            "key": "description",
+            "label": "Description:",
+            "type": "text"
         }
     ]
     popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
         name_val = values["name"].get().strip().title()
+        desc_val = values["description"].get("1.0", tk.END).strip()
 
         if not name_val:
             show_error("Please add a name to continue.", root)
@@ -751,11 +759,12 @@ def add_new_region(root, left_frame=None, right_frame=None):
             show_error("Region already exists.", root)
             return
 
-        region = Region(name_val)
+        region = Region(name_val, desc_val)
         region.save_to_file()
 
-        from functions.pages import regions_base_page
-        close_popup_and_refresh(popup, root, left_frame, right_frame, regions_base_page)
+        from functions.pages import dynamic_page_loader
+        close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
 
     submit_buttons(root, popup, "Submit", on_submit)
 
@@ -789,12 +798,16 @@ def remove_region(root, left_frame=None, right_frame=None):
         del regions[name_val]
         save_json("regions.json", regions)
 
-        from functions.pages import regions_base_page
-        close_popup_and_refresh(popup, root, left_frame, right_frame, regions_base_page)
+        from functions.pages import dynamic_page_loader
+        close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
 
     submit_buttons(root, popup, "Submit", on_submit)
 
 def add_note(section, root, left_frame=None, right_frame=None):
+    data = load_json("regions.json")
+    item_data = type_flags(section, data)
+
     popup_title = f"Add {section} Note"
     popup_label = f"Add Note to {section}"
     popup_fields = [
@@ -812,18 +825,9 @@ def add_note(section, root, left_frame=None, right_frame=None):
             show_error("Please insert a note.", root)
             return
 
-        if config.last_flag == "Regions":
-            region_name = section
-        else:
-            region_name = config.last_flag
-
-        region = Region.load_from_file(region_name)
-        target_name = section
-
-        if target_name == region_name:
-            region.add_note(note_text)
-        else:
-            pass
+        note_id = len(item_data["Notes"]) + 1
+        item_data["Notes"].append({"id": note_id, "note": note_text})
+        save_json("regions.json", data)
 
         from functions.pages import dynamic_page_loader
         close_popup_and_refresh(popup, root, left_frame, right_frame,
@@ -831,35 +835,19 @@ def add_note(section, root, left_frame=None, right_frame=None):
 
     submit_buttons(root, popup, "Submit", on_submit)
 
-def delete_note(section, root, left_frame=None, right_frame=None):
-    if config.last_flag == "Regions":
-        region_name = section
-    else:
-        region_name = config.last_flag
+def delete_note(name, root, left_frame=None, right_frame=None):
+    data = load_json("regions.json")
+    item_data = type_flags(name, data)
 
-    region = Region.load_from_file(region_name)
-
-    if section == region_name:
-        notes = region.notes
-    else:
-        notes = []
-        for city in region.cities:
-            if city.name == section:
-                notes = city.notes
-                break
-        for poi in region["POI"]:
-            if poi.name == section:
-                notes = poi.notes
-                break
-
+    notes = item_data.get("Notes", [])
     if not notes:
         show_error("No notes found.", root)
         return
 
     note_ids = [note["id"] for note in notes]
 
-    popup_title = f"Delete {section} note."
-    popup_label = f"Delete Note from {section}"
+    popup_title = f"Delete {name} note."
+    popup_label = f"Delete Note from {name}"
     popup_fields = [
         {
             "key": "note_id",
@@ -872,22 +860,23 @@ def delete_note(section, root, left_frame=None, right_frame=None):
     popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
-        target_name = section
         note_to_delete = values["note_id"].get()
 
-        if target_name == region_name:
-            region.delete_note(note_to_delete)
+        item_data["Notes"] = [n for n in notes if n["id"] != note_to_delete]
 
-            from functions.pages import dynamic_page_loader
-            label = config.button_flag
-            close_popup_and_refresh(popup, root, left_frame, right_frame,
-                                    lambda r, lf, rf: dynamic_page_loader(label, r, lf, rf))
-            return
-        return
+        for i, note in enumerate(item_data["Notes"], start=1):
+            note["id"] = i
+
+        save_json("regions.json", data)
+
+        from functions.pages import dynamic_page_loader
+        label = config.button_flag
+        close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                lambda r, lf, rf: dynamic_page_loader(label, r, lf, rf))
 
     submit_buttons(root, popup, "Submit", on_submit)
 
-def add_type(section, section_type, root, left_frame=None, right_frame=None):
+def add_location(section, section_type, root, left_frame=None, right_frame=None):
     type_map = {
         "city": City,
         "poi": PointOfInterest
@@ -907,19 +896,29 @@ def add_type(section, section_type, root, left_frame=None, right_frame=None):
             "key": "name",
             "label": "Name:",
             "type": "entry",
+        },
+        {
+            "key": "info",
+            "label": "Description:",
+            "type": "text",
         }
     ]
     popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
         name_val = smart_title(values["name"].get())
+        desc_text = values["info"].get("1.0", tk.END).strip()
         if not name_val:
             show_error("Please insert a name.", root)
+            return
+        elif not desc_text:
+            show_error("Please insert a description.", root)
             return
 
         region = Region.load_from_file(section)
 
         child_obj = ChildClass(name_val)
+        child_obj.set_information(desc_text)
 
         if section_type == "city":
             region.add_city(child_obj)
@@ -933,7 +932,7 @@ def add_type(section, section_type, root, left_frame=None, right_frame=None):
 
     submit_buttons(root, popup, "Submit", on_submit)
 
-def remove_type(section, section_type, root, left_frame=None, right_frame=None):
+def remove_location(section, section_type, root, left_frame=None, right_frame=None):
     type_map = {
         "city": {
             "label": "city",
@@ -1014,3 +1013,40 @@ def reset_settings(root, left_frame=None, right_frame=None):
         from functions.pages import settings_page
         close_popup_and_refresh(popup, root, left_frame, right_frame, settings_page)
     submit_buttons(root, popup, "Confirm", on_submit)
+
+def update_description(name, root, left_frame=None, right_frame=None):
+    data = load_json("regions.json")
+    item_data = type_flags(name, data)
+    current_description = item_data.get("Description", "")
+
+    popup_title = f"Update {name}'s description"
+    popup_label = f"Update {name}'s description"
+    popup_fields = [
+        {
+            "key": "description",
+            "label": "Description:",
+            "type": "text",
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
+    desc_widget = values.get("description")
+    if desc_widget:
+        desc_widget.insert("1.0", current_description)
+        desc_widget.mark_set("insert", "1.0")
+
+    def on_submit():
+        new_text = desc_widget.get("1.0", tk.END).strip()
+        if not new_text:
+            show_error("Please insert a description.", root)
+            return
+
+        item_data["Description"] = new_text
+        save_json("regions.json", data)
+
+        from functions.pages import dynamic_page_loader
+        close_popup_and_refresh(
+            popup, root, left_frame, right_frame,
+            lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf)
+        )
+
+    submit_buttons(root, popup, "Update", on_submit)

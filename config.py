@@ -78,18 +78,33 @@ REGIONS_BUTTON_LABELS = [
     "Go Back"
 ]
 SPECIFIC_REGION_BUTTON_LABELS = [
-    "Add Region Note",
-    "Remove Region Note",
+    "Update Description",
+    "Add Note",
+    "Remove Note",
     "Add City",
     "Remove City",
-    "Add POI",
-    "Remove POI",
+    "Add Point",
+    "Remove Point",
     "Go Back"
 ]
 CITY_BUTTON_LABELS = [
-    "Add City Note",
+    "Update Description",
+    "Add Note",
+    "Remove Note",
+    "Add Shop",
+    "Remove Shop",
+    "Add Place",
+    "Remove Place",
     "Go Back"
 ]
+POI_BUTTON_LABELS = {
+    "Update Description",
+    "Add Note",
+    "Remove Note",
+    "Add Effect",
+    "Remove Effect",
+    "Go Back"
+}
 
 # Constants
 WINDOW_SIZE = f"{WIDTH}x{HEIGHT}"
