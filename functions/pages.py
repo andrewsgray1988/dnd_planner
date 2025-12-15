@@ -167,9 +167,12 @@ def regions_base_page(root, left_frame, right_frame):
 
 def dynamic_page_loader(name, root, left_frame, right_frame):
     data = load_json("regions.json")
-    if config.nav_stack[-1] == "Regions" or config.nav_stack[-2] == "Regions":
+    if config.nav_stack[-1] == "Regions":
         item_type = None
         region_data = data[name]
+    elif config.nav_stack[-2] == "Regions":
+        item_type = find_category(name, data)
+        pass
     elif config.nav_stack[-3] == "Regions":
         item_type = find_category(name, data)
         region_name = config.nav_stack[-2]

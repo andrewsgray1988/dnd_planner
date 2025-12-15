@@ -76,9 +76,7 @@ def generate_buttons(root, left_scroll_frame, right_scroll_frame):
     current = config.button_flag
 
     if config.nav_stack [-1] == "Regions" or config.nav_stack[-2] == "Regions":
-        region_data = data[current]
-        items_to_list = [c["City"] for c in region_data["Cities"]]
-        items_to_list += [p["Point of Interest"] for p in region_data["POI"]]
+        items_to_list = list(data.keys())
     elif config.nav_stack[-3] == "Regions":
         item_type = find_category(current, data)
         region_name = config.nav_stack[-2]
@@ -88,7 +86,7 @@ def generate_buttons(root, left_scroll_frame, right_scroll_frame):
             region_data = next(p for p in data[region_name]["POI"] if p["Point of Interest"] == name)
     elif config.nav_stack[-4] == "Regions":
         pass
-
+        """
         items_to_list = [c["City"] for c in region_data["Cities"]]
         items_to_list += [p["Point of Interest"] for p in region_data["POI"]]
 
@@ -96,6 +94,7 @@ def generate_buttons(root, left_scroll_frame, right_scroll_frame):
             if city["City"] == current:
                 items_to_list = [p["Point of Interest"] for p in city["POI"]]
                 break
+        """
     elif config.nav_stack[-3] == "Regions":
         pass
 
@@ -116,7 +115,6 @@ def close_popup_and_refresh(popup, root, left_frame, right_frame, refresh_fn):
     popup.destroy()
     if left_frame and right_frame:
         refresh_fn(root, left_frame, right_frame)
-
 
 def initiate_popup(root, title, label, fields):
     popup = tk.Toplevel(root)
@@ -144,11 +142,6 @@ def initiate_popup(root, title, label, fields):
         elif field_type == "radio":
             frame = tk.Frame(popup)
             frame.pack()
-        elif field_type == "text":
-            entry = tk.Text(popup, height=8, width=50)
-            entry.pack(pady=10)
-            entries[key] = entry
-
             default = field.get("default", "")
             var = tk.StringVar(popup, value=default)
 
@@ -160,4 +153,22 @@ def initiate_popup(root, title, label, fields):
                     value=option
                 ).pack(anchor="w")
             entries[key] = var
+        elif field_type == "radionum":
+            frame = tk.Frame(popup)
+            frame.pack()
+            var = tk.IntVar(popup, value=field.get("default"))
+
+            for option in field["options"]:
+                tk.Radiobutton(
+                    frame,
+                    text=str(option),
+                    variable=var,
+                    value=option
+                ).pack(anchor="w")
+            entries[key] = var
+        elif field_type == "text":
+            entry = tk.Text(popup, height=8, width=50)
+            entry.pack(pady=10)
+            entries[key] = entry
+
     return popup, entries

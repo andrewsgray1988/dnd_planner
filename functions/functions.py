@@ -826,9 +826,8 @@ def add_note(section, root, left_frame=None, right_frame=None):
             pass
 
         from functions.pages import dynamic_page_loader
-        label = config.button_flag
         close_popup_and_refresh(popup, root, left_frame, right_frame,
-                                lambda r, lf, rf: dynamic_page_loader(label, r, lf, rf))
+                                lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
 
     submit_buttons(root, popup, "Submit", on_submit)
 
@@ -857,53 +856,36 @@ def delete_note(section, root, left_frame=None, right_frame=None):
         show_error("No notes found.", root)
         return
 
-    popup = tk.Toplevel(root)
-    popup.title(f"Delete {section} note.")
+    note_ids = [note["id"] for note in notes]
 
-    instr_label = tk.Label(popup, text=f"Delete Note from {section}")
-    instr_label.pack(pady=10)
+    popup_title = f"Delete {section} note."
+    popup_label = f"Delete Note from {section}"
+    popup_fields = [
+        {
+            "key": "note_id",
+            "label": "Please select a note.",
+            "type": "radionum",
+            "options": note_ids,
+            "default": note_ids[0]
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
         target_name = section
-        note_to_delete = note_id.get()
+        note_to_delete = values["note_id"].get()
 
         if target_name == region_name:
             region.delete_note(note_to_delete)
 
-            popup.destroy()
-            if left_frame and right_frame:
-                from functions.pages import dynamic_page_loader
-                label = config.button_flag
-                dynamic_page_loader(label, root, left_frame, right_frame)
+            from functions.pages import dynamic_page_loader
+            label = config.button_flag
+            close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                    lambda r, lf, rf: dynamic_page_loader(label, r, lf, rf))
             return
         return
 
-    def on_cancel():
-        popup.destroy()
-
-    note_frame = tk.Frame(popup)
-    note_frame.pack(pady=10)
-
-    note_id = tk.IntVar(popup)
-    note_id.set(notes[0]["id"])
-
-    for note in notes:
-        rb = tk.Radiobutton(
-            note_frame,
-            text=f"{note['id']}",
-            variable=note_id,
-            value=note['id']
-        )
-        rb.pack(anchor="w")
-
-
-    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Submit", on_submit)
 
 def add_type(section, section_type, root, left_frame=None, right_frame=None):
     type_map = {
@@ -918,20 +900,19 @@ def add_type(section, section_type, root, left_frame=None, right_frame=None):
     ChildClass = type_map[section_type]
     descrip = section_type if section_type != "poi" else "point of interest"
 
-    popup = tk.Toplevel(root)
-    popup.title(f"Add {descrip} to {section}")
-
-    instr_label = tk.Label(popup, text=f"Add {descrip} to {section}")
-    instr_label.pack(pady=10)
-
-    name_label = tk.Label(popup, text="Name:")
-    name_label.pack()
-    name_entry = tk.Entry(popup)
-    name_entry.pack()
-    name_entry.focus_set()
+    popup_title = f"Add {descrip} to {section}"
+    popup_label = f"Add {descrip} to {section}"
+    popup_fields = [
+        {
+            "key": "name",
+            "label": "Name:",
+            "type": "entry",
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
-        name_val = smart_title(name_entry.get())
+        name_val = smart_title(values["name"].get())
         if not name_val:
             show_error("Please insert a name.", root)
             return
@@ -946,24 +927,11 @@ def add_type(section, section_type, root, left_frame=None, right_frame=None):
             region.add_poi(child_obj)
 
         region.save_to_file()
+        from functions.pages import dynamic_page_loader
+        close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
 
-        popup.destroy()
-
-        if left_frame and right_frame:
-            from functions.pages import dynamic_page_loader
-            label = config.button_flag
-            dynamic_page_loader(label, root, left_frame, right_frame)
-
-    def on_cancel():
-        popup.destroy()
-
-    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Submit", on_submit)
 
 def remove_type(section, section_type, root, left_frame=None, right_frame=None):
     type_map = {
@@ -992,58 +960,37 @@ def remove_type(section, section_type, root, left_frame=None, right_frame=None):
         show_error(f"No locations found for {section}", root)
         return
 
-    popup = tk.Toplevel(root)
-    popup.title(f"Remove {cfg['label']} from {section}")
-
-    instr_label = tk.Label(popup,
-                           text=f"Select which {cfg['label']} you wish to delete.\nThis is a permanent action, and will delete ALL information included in that region!")
-    instr_label.pack(pady=10)
+    location_names = [loc.name for loc in locations]
+    popup_title = f"Remove {cfg['label']} from {section}"
+    popup_label = f"Select which {cfg['label']} you wish to delete.\nThis is a permanent action, and will delete ALL information included in that region!"
+    popup_fields = [
+        {
+            "key": "name",
+            "label": f"Select {cfg['label']} to delete:",
+            "type": "radio",
+            "options": location_names,
+            "default": location_names[0]
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     region = Region.load_from_file(section)
-    locations = getattr(region, cfg['list_attr'])
-
-    name_var = tk.StringVar(popup)
-    name_var.set(locations[0].name)
-
-    names_frame = tk.Frame(popup)
-    names_frame.pack(pady=10)
-
-    for loc in locations:
-        rb = tk.Radiobutton(
-            names_frame,
-            text=loc.name,
-            variable=name_var,
-            value=loc.name
-        )
-        rb.pack(anchor="w")
 
     def on_submit():
         delete_func = getattr(region, cfg['delete'])
-        delete_func(name_var.get())
+        delete_func(values["name"].get())
 
+        from functions.pages import dynamic_page_loader
+        close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
         popup.destroy()
 
-        if left_frame and right_frame:
-            from functions.pages import dynamic_page_loader
-            dynamic_page_loader(config.button_flag, root, left_frame, right_frame)
-
-    def on_cancel():
-        popup.destroy()
-
-    submit_btn = tk.Button(popup, text="Submit", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+    submit_buttons(root, popup, "Submit", on_submit)
 
 def reset_settings(root, left_frame=None, right_frame=None):
-    popup = tk.Toplevel(root)
-    popup.title("Default Settings Confirmation")
-
-    instr_label = tk.Label(popup, text="This will reset Buffers to 0 and Classes to 1.\nPlease confirm.")
-    instr_label.pack(pady=10)
+    popup_title = "Default Settings Confirmation"
+    popup_label = "This will reset Buffers to 0 and Classes to 1.\nPlease confirm."
+    popup, values = initiate_popup(root, popup_title, popup_label, None)
 
     def on_submit():
         data = load_json("settings.json")
@@ -1064,18 +1011,6 @@ def reset_settings(root, left_frame=None, right_frame=None):
         data["Wizard"] = "1"
         save_json("settings.json", data)
 
-        if left_frame and right_frame:
-            from functions.pages import settings_page
-            settings_page(root, left_frame, right_frame)
-        popup.destroy()
-
-    def on_cancel():
-        popup.destroy()
-
-    submit_btn = tk.Button(popup, text="Confirm", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
-
-    popup.grab_set()
-    root.wait_window(popup)
+        from functions.pages import settings_page
+        close_popup_and_refresh(popup, root, left_frame, right_frame, settings_page)
+    submit_buttons(root, popup, "Confirm", on_submit)

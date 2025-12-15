@@ -78,13 +78,6 @@ def on_button_click(label, root, left_frame=None, right_frame=None):
         case "Update Party Member":
             from functions.functions import update_member
             func = update_member
-        case "Regions":
-            from functions.pages import regions_base_page
-            navigate_to("Regions")
-            config.last_flag = "Regions"
-            config.regions_flag = label
-            config.button_flag = "Regions"
-            func = regions_base_page
         case "Settings":
             from functions.pages import settings_page
             navigate_to("Settings")
@@ -158,9 +151,12 @@ def on_button_click(label, root, left_frame=None, right_frame=None):
             print(f"label = {label}")
             print(f"config.nav_stack = {config.nav_stack}")
             print(f"config.button_flag = {config.button_flag}")
-            print(f"config.nav_stack[-1] = {config.nav_stack[-1]}")
-            print(f"config.nav_stack[-2] = {config.nav_stack[-2]}")
-            print(f"config.nav_stack[-3] = {config.nav_stack[-3]}")
+            if len(config.nav_stack) >= 1:
+                print(f"config.nav_stack[-1] = {config.nav_stack[-1]}")
+            if len(config.nav_stack) >= 2:
+                print(f"config.nav_stack[-2] = {config.nav_stack[-2]}")
+            if len(config.nav_stack) >= 3:
+                print(f"config.nav_stack[-3] = {config.nav_stack[-3]}")
             func = dynamic_page_loader(label, root, left_frame, right_frame)
 
     if func:
