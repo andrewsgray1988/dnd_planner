@@ -1093,3 +1093,40 @@ def add_feature(section, feature_type, root, left_frame=None, right_frame=None):
         close_popup_and_refresh(popup, root, left_frame, right_frame,
                                 lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
     submit_buttons(root, popup, "Submit", on_submit)
+
+def remove_feature(section, feature_type, root, left_frame=None, right_frame=None):
+    data = load_json("regions.json")
+    item_data = type_flags(section, data)
+
+    feature_list = []
+
+    match feature_type:
+        case "shop":
+            removal = "Shops"
+            for shop in item_data["Shops"]:
+                feature_list.append(shop["Name"])
+
+    popup_title = f"Add {feature_type} to {section}"
+    popup_label = f"Add Note to {section}"
+    popup_fields = [
+        {
+            "key": "name",
+            "label": f"Choose which {feature_type} to remove",
+            "type": "radio",
+            "options": feature_list,
+            "default": feature_list[0]
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
+
+    def on_submit():
+        name_val = values["name"].get()
+
+        item_data[removal] = [v for v in item_data[removal] if v["Name"] != name_val]
+        save_json("regions.json", data)
+
+        from functions.pages import dynamic_page_loader
+        close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
+
+    submit_buttons(root, popup, "Submit", on_submit)

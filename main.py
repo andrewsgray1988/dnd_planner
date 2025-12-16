@@ -6,7 +6,7 @@ from config import WINDOW_SIZE
 
 #Initiates and sets the frames
 root = tk.Tk()
-root.title("DnD Encounter Generator")
+root.title("DnD Planner")
 root.geometry(WINDOW_SIZE)
 root.resizable(True, True)
 
