@@ -214,7 +214,7 @@ def dynamic_page_loader(name, root, left_frame, right_frame):
                         populate_info(item_data, "Notes", "note", 20, scroll_frame)
                     shops = item_data.get("Shops", [])
                     if shops:
-                        populate_info(item_data, "Shops", "Shop", 20, scroll_frame)
+                        populate_info(item_data, "Shops", "Name", 20, scroll_frame)
                     pois = item_data.get("Places", [])
                     if pois:
                         populate_info(item_data, "Places", "Place", 20, scroll_frame)

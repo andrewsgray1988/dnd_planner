@@ -1050,3 +1050,46 @@ def update_description(name, root, left_frame=None, right_frame=None):
         )
 
     submit_buttons(root, popup, "Update", on_submit)
+
+def add_feature(section, feature_type, root, left_frame=None, right_frame=None):
+    data = load_json("regions.json")
+    item_data = type_flags(section, data)
+
+    popup_title = f"Add {feature_type} to {section}"
+    popup_label = f"Add Note to {section}"
+    popup_fields = [
+        {
+            "key": "name",
+            "label": f"Name the {feature_type}:",
+            "type": "entry",
+        },
+        {
+            "key": "description",
+            "label": "Description:",
+            "type": "text"
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
+    def on_submit():
+        name_val = values["name"].get().strip().title()
+        desc_val = values["description"].get("1.0", tk.END).strip()
+
+        if not name_val or not desc_val:
+            show_error("Please insert a name and description.", root)
+            return
+
+        match feature_type:
+            case "shop":
+                item_data.setdefault("Shops", []).append({
+                    "Name": name_val,
+                    "Description": desc_val,
+                    "Notes": [],
+                    "Inventory": [],
+                    "People": []
+                })
+
+        save_json("regions.json", data)
+        from functions.pages import dynamic_page_loader
+        close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
+    submit_buttons(root, popup, "Submit", on_submit)

@@ -145,9 +145,16 @@ def populate_info(data, section, subsection, pad, scroll_frame):
     header_label = tk.Label(scroll_frame, text=header_text, font=region_font, anchor="nw", justify="left")
     header_label.pack(fill=tk.BOTH, expand=True)
     for d in data[section]:
-        ins_text = f'{count}: {d[subsection]}'
+        value = d.get(subsection, "Unnamed")
+        ins_text = f'{count}: {value}'
+
         label = tk.Label(scroll_frame, text=ins_text, anchor="nw", justify="left")
-        label.pack(fill=tk.BOTH, expand=True, padx=(pad, 0))
+        label.pack(fill=tk.BOTH, expand=True)
+
+        desc = d.get("Description")
+        if desc:
+            desc_label = tk.Label(scroll_frame, text=desc, anchor="nw", justify="left", wraplength=500)
+            desc_label.pack(fill=tk.BOTH, expand=True, padx=(pad, 0))
         count += 1
 
 def type_flags(name, data):

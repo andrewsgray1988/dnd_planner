@@ -7,7 +7,15 @@
                 "City": "Los Angeles",
                 "Description": "Satan's butthole itself, now with new McDonalds. And a burger king",
                 "Places": [],
-                "Shops": [],
+                "Shops": [
+                    {
+                        "Name": "Mcdonalds",
+                        "Description": "Mickey D's",
+                        "Notes": [],
+                        "Inventory": [],
+                        "People": []
+                    }
+                ],
                 "Persons of Interest": [],
                 "Notes": [
                     {

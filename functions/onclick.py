@@ -143,6 +143,9 @@ def on_button_click(label, root, left_frame=None, right_frame=None):
         case "Remove Point":
             from functions.functions import remove_location
             func = lambda r=root, l=left_frame, rt=right_frame: remove_location(config.button_flag, "poi", r, l, rt)
+        case "Add Shop":
+            from functions.functions import add_feature
+            func = lambda r=root, l=left_frame, rt=right_frame: add_feature(config.button_flag, "shop", r, l, rt)
         case "Reset Settings to Default":
             from functions.functions import reset_settings
             func = reset_settings

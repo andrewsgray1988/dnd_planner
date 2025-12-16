@@ -79,15 +79,29 @@ def generate_buttons(root, left_scroll_frame, right_scroll_frame):
         items_to_list = list(data.keys())
     elif len(config.nav_stack) >= 2 and config.nav_stack[-2] == "Regions":
         current = data.get(current_name)
-        items_to_list = []
         cities = current.get("Cities", [])
         if cities:
             items_to_list += [c["City"] for c in current["Cities"]]
         pois = current.get("Points Of Interest", [])
         if pois:
             items_to_list += [p["POI"] for p in current["Points Of Interest"]]
-    elif config.nav_stack[-3] == "Regions":
-        pass
+    elif len(config.nav_stack) >= 3 and config.nav_stack[-3] == "Regions":
+        region_name = config.regions_flag
+        region = data.get(region_name)
+        item_type = find_category(current_name, {region_name: region})
+        if item_type == "City":
+            current = None
+            for city in region.get("Cities", []):
+                if city.get("City") == current_name:
+                    current = city
+                    break
+            places = current.get("Places", [])
+            if places:
+                items_to_list += [p["Name"] for p in places]
+            shops = current.get("Shops", [])
+            if shops:
+                items_to_list += [s["Name"] for s in shops]
+
 
     for label in items_to_list:
         btn = tk.Button(right_scroll_frame, text=label,
