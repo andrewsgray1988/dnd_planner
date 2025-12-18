@@ -250,10 +250,10 @@ def check_unique(name, jsons, level, context, popup, parent_name=None):
                     return False
     return True
 
-def validate_and_convert(to_list, root):
+def validate_and_convert(to_list, req_flag, root):
     converted_list = []
     for num, key, name in to_list:
-        if not num:
+        if not num and req_flag:
             show_error("Missing entry", root)
             return None
         try:

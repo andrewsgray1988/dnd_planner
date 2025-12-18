@@ -77,7 +77,7 @@ def add_monster(root, left_frame=None, right_frame=None):
             name_val, cr_val, actions_val, count_val, destination = checked
         else:
             validation_list = [(name_val, str), (cr_val, int), (actions_val, int), (destination, str)]
-            checked = validate_and_convert(validation_list, root)
+            checked = validate_and_convert(validation_list, True, root)
             if not checked:
                 return
             name_val, cr_val, actions_val, destination = checked
