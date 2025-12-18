@@ -1,8 +1,6 @@
 import tkinter as tk
 
-from functions.general import (
-    load_json
-)
+from models.classes import *
 
 # Flags
 bestiary_flag = None
@@ -14,55 +12,72 @@ party_flag = None
 last_flag = None
 nav_stack = ['Main']
 
-# Settings
-SETTINGS_LIST = load_json("settings.json")
-ARTI_MOD = SETTINGS_LIST["Artificer"]
-BARB_MOD = SETTINGS_LIST["Barbarian"]
-BARD_MOD = SETTINGS_LIST["Bard"]
-CLER_MOD = SETTINGS_LIST["Cleric"]
-DRUI_MOD = SETTINGS_LIST["Druid"]
-FIGH_MOD = SETTINGS_LIST["Fighter"]
-MONK_MOD = SETTINGS_LIST["Monk"]
-PALA_MOD = SETTINGS_LIST["Paladin"]
-RANG_MOD = SETTINGS_LIST["Ranger"]
-ROGU_MOD = SETTINGS_LIST["Rogue"]
-SORC_MOD = SETTINGS_LIST["Sorcerer"]
-WARL_MOD = SETTINGS_LIST["Warlock"]
-WIZA_MOD = SETTINGS_LIST["Wizard"]
-WIDTH = str(SETTINGS_LIST["Width"])
-HEIGHT = str(SETTINGS_LIST["Height"])
+VALID_MAP = {
+            "artificer": Artificer,
+            "barbarian": Barbarian,
+            "bard": Bard,
+            "cleric": Cleric,
+            "druid": Druid,
+            "fighter": Fighter,
+            "monk": Monk,
+            "paladin": Paladin,
+            "ranger": Ranger,
+            "rogue": Rogue,
+            "sorcerer": Sorcerer,
+            "warlock": Warlock,
+            "wizard": Wizard,
+        }
 
 # Button Labels
 MAIN_PAGE_BUTTON_LABELS = [
+    "Label: Campaign Info",
     "Party and NPCs",
     "Bestiary",
-    "Generators",
     "Regions",
+    "Line Break",
+    "Label: Navigation",
+    "Generators",
     "Settings",
     "Close Program"
 ]
 MANAGE_PARTY_BUTTON_LABELS = [
+    "Label: Party Management",
     "Add Party Member",
     "Update Party Member",
     "Delete Party Member",
+    "Line Break",
+    "Label: Camp Management",
     "Move Member to Camp",
     "Move Active from Camp",
+    "Line Break",
+    "Label: Navigation",
     "Go Back"
 ]
 MANAGE_BESTIARY_BUTTON_LABELS = [
+    "Label: Monster Entry",
     "Add Monster",
     "Delete Monster",
+    "Line Break",
+    "Label: Move Monsters",
     "Move Monster to Required",
     "Move Monster to Random",
     "Move Monster to Archive",
+    "Line Break",
+    "Generate Encounter",
+    "Label: Navigation",
     "Go Back"
 ]
 SETTINGS_BUTTON_LABELS = [
-    "Adjust Setting",
+    "Label: Settings",
+    "Adjust Settings",
+    "Reset Settings to Default",
+    "Line Break",
+    "Label: Clear Data",
     "Clear Party Data",
     "Clear Bestiary Data",
+    "Clear Regions Data",
     "Clear All Data",
-    "Reset Settings to Default",
+    "Label: Navigation",
     "Go Back"
 ]
 
@@ -70,43 +85,96 @@ GENERATORS_BUTTON_LABELS = [
     "Generate Encounter",
     "Generate Individual Loot",
     "Generate Treasure Hoard",
+    "Label: Navigation",
     "Go Back"
 ]
 REGIONS_BUTTON_LABELS = [
+    "Label: Region Management",
     "Add New Region",
     "Remove Region",
-    "Go Back"
+    "Line Break",
+    "Label: Navigation",
+    "Party and NPCs",
+    "Bestiary",
+    "Go Back",
 ]
 SPECIFIC_REGION_BUTTON_LABELS = [
+    "Label: Region Management",
     "Update Description",
     "Add Note",
+    "Update Note",
     "Remove Note",
     "Add City",
     "Remove City",
-    "Add Point",
-    "Remove Point",
-    "Go Back"
+    "Add Point of Interest",
+    "Remove Point of Interest",
+    "Line Break",
+    "Label: Navigation",
+    "Party and NPCs",
+    "Bestiary",
+    "Regions",
+    "Go Back",
+    "Main Page"
 ]
 CITY_BUTTON_LABELS = [
+    "Label: City Management",
     "Update Description",
     "Add Note",
+    "Update Note",
     "Remove Note",
-    "Add Shop",
-    "Remove Shop",
     "Add Place",
     "Remove Place",
-    "Go Back"
+    "Add Shop",
+    "Remove Shop",
+    "Line Break",
+    "Label: Navigation",
+    "Party and NPCs",
+    "Bestiary",
+    "Regions",
+    "Go Back",
+    "Main Page"
 ]
-POI_BUTTON_LABELS = {
+POI_BUTTON_LABELS = [
+    "Label: POI Management",
     "Update Description",
     "Add Note",
+    "Update Note",
     "Remove Note",
     "Add Effect",
+    "Update Effect",
     "Remove Effect",
-    "Go Back"
-}
+    "Line Break",
+    "Label: Navigation",
+    "Party and NPCs",
+    "Bestiary",
+    "Regions",
+    "Go Back",
+    "Main Page"
+]
+SHOP_BUTTON_LABELS = [
+    "Label: Shop Management",
+    "Update Description",
+    "Add Note",
+    "Update Note",
+    "Remove Note",
+    "Add Inventory",
+    "Update Inventory",
+    "Remove Inventory",
+    "Line Break",
+    "Label: Navigation",
+    "Party and NPCs",
+    "Bestiary",
+    "Regions",
+    "Go Back",
+    "Main Page"
+]
 
 # Constants
+CONSTANT_LIST = load_json("settings.json")
+
+WIDTH = str(CONSTANT_LIST["Width"])
+HEIGHT = str(CONSTANT_LIST["Height"])
+
 WINDOW_SIZE = f"{WIDTH}x{HEIGHT}"
 BUTTON_PACK_OPTIONS = {"fill": tk.X, "pady": 5}
 

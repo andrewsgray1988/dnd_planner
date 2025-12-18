@@ -1,8 +1,3 @@
-from functions.general import (
-    save_json,
-    load_json
-)
-
 class Player:
     def __init__(self, name, armor_class, magic_items, status="Player"):
         self.name = name
@@ -14,10 +9,11 @@ class Player:
         self.actions = 0
 
     def add_class(self, class_obj, level):
+        temp_instance = class_obj(level)
         for cls in self.classes:
-            if cls.name == class_obj.__name__:
+            if cls.name == temp_instance.name:
                 raise Exception("Duplicate class name")
-        self.classes.append(class_obj(level))
+        self.classes.append(temp_instance)
 
     def update_class_level(self, class_name, level):
         class_name_lower = class_name.lower()
@@ -66,6 +62,7 @@ class Player:
         return player_dict
 
     def save_to_file(self):
+        from functions.general import save_json, load_json
         players_list = load_json("party.json")
         player_dict = self.to_dict()
         players_list.append(player_dict)

@@ -1,15 +1,29 @@
 [
     {
-        "name": "Derrick",
+        "name": "Test 1",
         "status": "Player",
-        "armor_class": 14,
+        "armor_class": 1,
         "magic_items": 1,
-        "combat_value": 3.14,
+        "combat_value": -4.9,
         "actions": 1.5,
         "classes": [
             {
-                "name": "Barbarian",
-                "level": 3
+                "name": "Warlock",
+                "level": 1
+            }
+        ]
+    },
+    {
+        "name": "Test Npc",
+        "status": "NPC",
+        "armor_class": 1,
+        "magic_items": 1,
+        "combat_value": 1.1,
+        "actions": 1.5,
+        "classes": [
+            {
+                "name": "Bard",
+                "level": 1
             }
         ]
     }

@@ -9,9 +9,10 @@ from functions.general import (
     show_error,
     load_json,
     save_json,
-    smart_title,
     find_category,
-    type_flags
+    type_flags,
+    recalculate_combat_values,
+    check_unique
 )
 from functions.gui import (
     create_scrollable_frame,
@@ -20,7 +21,8 @@ from functions.gui import (
     initiate_popup
 )
 from config import (
-    VALID_CLASSES
+    VALID_CLASSES,
+    VALID_MAP
 )
 
 def add_monster(root, left_frame=None, right_frame=None):
@@ -94,22 +96,19 @@ def add_monster(root, left_frame=None, right_frame=None):
                 return
 
         #Double checks for duplicates
-        monster_list = load_json(f"{destination}.json")
-        for mon in monster_list:
-            if mon["name"].lower() == name_val.lower():
-                show_error(f"Monster already exists in {destination}", root)
-                return
+        flag = check_unique(name_val, ("archive.json", "required.json", "random.json"), None, "name", popup)
 
-        #Creates the new monster class
-        if destination == "required":
-            new_monster = Monster(name_val, cr_val, actions_val, count_val)
-        else:
-            new_monster = Monster(name_val, cr_val, actions_val)
-        new_monster.save_to_file(destination)
+        if flag:
+            #Creates the new monster class
+            if destination == "required":
+                new_monster = Monster(name_val, cr_val, actions_val, count_val)
+            else:
+                new_monster = Monster(name_val, cr_val, actions_val)
+            new_monster.save_to_file(destination)
 
-        #Closes popup and reloads page with new info
-        from functions.pages import manage_bestiary_page
-        close_popup_and_refresh(popup, root, left_frame, right_frame, manage_bestiary_page)
+            #Closes popup and reloads page with new info
+            from functions.pages import manage_bestiary_page
+            close_popup_and_refresh(popup, root, left_frame, right_frame, manage_bestiary_page)
 
     #Command buttons
     submit_buttons(root, popup, "Confirm", on_submit)
@@ -348,6 +347,7 @@ def adjust_setting(root, left_frame=None, right_frame=None):
 
         #Cleanup and reset page
         save_json("settings.json", new_values)
+        recalculate_combat_values()
         from functions.pages import settings_page
         close_popup_and_refresh(popup, root, left_frame, right_frame, settings_page)
         popup.destroy()
@@ -403,21 +403,6 @@ def add_member(root, left_frame=None, right_frame=None):
         level_val = values["level"].get()
 
         class_val_input = class_val.lower()
-        valid_map = {
-            "artificer": Artificer,
-            "barbarian": Barbarian,
-            "bard": Bard,
-            "cleric": Cleric,
-            "druid": Druid,
-            "fighter": Fighter,
-            "monk": Monk,
-            "paladin": Paladin,
-            "ranger": Ranger,
-            "rogue": Rogue,
-            "sorcerer": Sorcerer,
-            "warlock": Warlock,
-            "wizard": Wizard,
-        }
 
         for key, value in [("Name", name_val), ("Armor Class", ac_val), ("Magic Items", magic_items_val), ("Class", class_val), ("Level", level_val)]:
             if value.strip() == "":
@@ -431,27 +416,23 @@ def add_member(root, left_frame=None, right_frame=None):
             show_error("Armor Class, Magic Items, and Level must be non-decimal number.", root)
             return
 
-        if class_val_input not in valid_map:
-            show_error(f"Invalid class. Must be one of: {', '.join(VALID_CLASSES)} (Not case sensitive).", root)
-            return
+        if class_val_input in VALID_MAP:
+            class_obj = VALID_MAP[class_val_input]
+        else:
+            class_obj = lambda level: CustomClass(class_val, level)
 
-        class_obj = valid_map[class_val_input]
+        flag = check_unique(name_val, ("party.json", "camp.json"), None, "name", popup)
 
-        players_list = load_json("party.json")
-        for player in players_list:
-            if player["name"] == name_val:
-                show_error("Player already exists in party.", root)
-                return
+        if flag:
+            new_player = Player(name_val, ac_val, magic_items_val, status_val)
+            new_player.add_class(class_obj, level_val)
+            new_player.get_combat_value()
+            new_player.get_action_count()
+            new_player.save_to_file()
 
-        new_player = Player(name_val, ac_val, magic_items_val, status_val)
-        new_player.add_class(class_obj, level_val)
-        new_player.get_combat_value()
-        new_player.get_action_count()
-        new_player.save_to_file()
-
-        from functions.pages import manage_party_page
-        close_popup_and_refresh(popup, root, left_frame, right_frame, manage_party_page)
-        popup.destroy()
+            from functions.pages import manage_party_page
+            close_popup_and_refresh(popup, root, left_frame, right_frame, manage_party_page)
+            popup.destroy()
 
     submit_buttons(root, popup, "Submit", on_submit)
 
@@ -562,28 +543,12 @@ def update_member(root, left_frame=None, right_frame=None):
         class_val = values["class"].get().strip().title()
         level_val = values["level"].get()
 
-        valid_map = {
-            "artificer": Artificer,
-            "barbarian": Barbarian,
-            "bard": Bard,
-            "cleric": Cleric,
-            "druid": Druid,
-            "fighter": Fighter,
-            "monk": Monk,
-            "paladin": Paladin,
-            "ranger": Ranger,
-            "rogue": Rogue,
-            "sorcerer": Sorcerer,
-            "warlock": Warlock,
-            "wizard": Wizard,
-        }
-
         if class_val:
             class_val_input = class_val.lower()
-            if class_val_input not in valid_map:
+            if class_val_input not in VALID_MAP:
                 show_error(f"Invalid class. Must be one of: {', '.join(VALID_CLASSES)} (Not case sensitive).", root)
                 return
-            class_obj = valid_map[class_val_input]
+            class_obj = VALID_MAP[class_val_input]
         else:
             class_obj = None
 
@@ -593,7 +558,11 @@ def update_member(root, left_frame=None, right_frame=None):
                 found = True
                 player_update = Player(name_val, player["armor_class"], player["magic_items"])
                 for cls in player["classes"]:
-                    class_type = valid_map[cls["name"].lower()]
+                    class_name_lower = cls["name"].lower()
+                    if class_name_lower in VALID_MAP:
+                        class_type = VALID_MAP[class_name_lower]
+                    else:
+                        class_type = lambda level: CustomClass(cls["name"], level)
                     player_update.add_class(class_type, cls["level"])
                     player_update.status = status_val
                 if ac_val:
@@ -611,13 +580,15 @@ def update_member(root, left_frame=None, right_frame=None):
                 if (class_val and not level_val) or (level_val and not class_val):
                     show_error("If updating Class, both Class and Level must be provided.", root)
                     return
-                if class_val and level_val:
-                    existing_classes = [cls.name.lower() for cls in player_update.classes]
+                if class_val:
                     class_val_lower = class_val.lower()
-                    if class_val_lower in existing_classes:
-                        player_update.update_class_level(class_val, int(level_val))
+                    if not level_val or int(level_val) == 0:
+                        player_update.classes = [cls for cls in player_update.classes if cls.name.lower() != class_val_lower]
                     else:
-                        player_update.add_class(class_obj, int(level_val))
+                        if class_val_lower in [cls.name.lower() for cls in player_update.classes]:
+                            player_update.update_class_level(class_val, level_val)
+                        else:
+                            player_update.add_class(class_obj, level_val)
 
                 players_list.remove(player)
                 players_list.append(player_update.to_dict())
@@ -635,7 +606,12 @@ def update_member(root, left_frame=None, right_frame=None):
                     found = True
                     player_update = Player(name_val, player["armor_class"], player["magic_items"])
                     for cls in player["classes"]:
-                        class_type = valid_map[cls["name"].lower()]
+                        class_name_lower = cls["name"].lower()
+                        if class_name_lower in VALID_MAP:
+                            class_type = VALID_MAP[class_name_lower]
+                        else:
+                            # Use a lambda so add_class works the same way as other classes
+                            class_type = lambda level: CustomClass(cls["name"], level)
                         player_update.add_class(class_type, cls["level"])
                         player_update.status = status_val
                     if ac_val:
@@ -753,18 +729,15 @@ def add_new_region(root, left_frame=None, right_frame=None):
             show_error("Please add a name to continue.", root)
             return
 
-        regions_dict = load_json("regions.json")
+        flag = check_unique(name_val, ("regions.json",), "Region", None, popup)
 
-        if name_val in regions_dict:
-            show_error("Region already exists.", root)
-            return
+        if flag:
+            region = Region(name_val, desc_val)
+            region.save_to_file()
 
-        region = Region(name_val, desc_val)
-        region.save_to_file()
-
-        from functions.pages import dynamic_page_loader
-        close_popup_and_refresh(popup, root, left_frame, right_frame,
-                                lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
+            from functions.pages import dynamic_page_loader
+            close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                    lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
 
     submit_buttons(root, popup, "Submit", on_submit)
 
@@ -773,7 +746,7 @@ def remove_region(root, left_frame=None, right_frame=None):
     if not regions:
         show_error("No regions available to delete.", root)
         return
-    regions_list = [r["name"] for r in regions]
+    regions_list = list(regions.keys())
 
     popup_title = "Delete Region"
     popup_label = "Select which region you wish to delete.\nThis is a permanent action, and will delete ALL information included in that region!"
@@ -835,9 +808,9 @@ def add_note(section, root, left_frame=None, right_frame=None):
 
     submit_buttons(root, popup, "Submit", on_submit)
 
-def delete_note(name, root, left_frame=None, right_frame=None):
+def update_note(section, root, left_frame=None, right_frame=None):
     data = load_json("regions.json")
-    item_data = type_flags(name, data)
+    item_data = type_flags(section, data)
 
     notes = item_data.get("Notes", [])
     if not notes:
@@ -846,8 +819,61 @@ def delete_note(name, root, left_frame=None, right_frame=None):
 
     note_ids = [note["id"] for note in notes]
 
-    popup_title = f"Delete {name} note."
-    popup_label = f"Delete Note from {name}"
+    popup_title = f"Delete {section} note."
+    popup_label = f"Delete Note from {section}"
+    popup_fields = [
+        {
+            "key": "note_id",
+            "label": "Please select a note.",
+            "type": "radionum",
+            "options": note_ids,
+            "default": note_ids[0]
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
+
+    def note_selected():
+        selected_id = values["note_id"].get()
+        current_note = next((n for n in item_data.get("Notes", []) if n["id"] == selected_id), None)
+
+        note_text = current_note["note"]
+        for w in popup.winfo_children():
+            w.destroy()
+
+        tk.Label(popup, text="Update note").pack(pady=10)
+
+        text_widget = tk.Text(popup, height=8, width=50)
+        text_widget.pack(pady=10)
+        text_widget.insert("1.0", note_text)
+
+        def on_submit():
+            text_info = text_widget.get("1.0", tk.END).strip()
+            for note in item_data.get("Notes", []):
+                if note["id"]== selected_id:
+                    note["note"] = text_info
+                    break
+
+            save_json("regions.json", data)
+            from functions.pages import dynamic_page_loader
+            close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                    lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
+
+        submit_buttons(root, popup, "Submit", on_submit)
+    submit_buttons(root, popup, "Select Note", note_selected)
+
+def delete_note(section, root, left_frame=None, right_frame=None):
+    data = load_json("regions.json")
+    item_data = type_flags(section, data)
+
+    notes = item_data.get("Notes", [])
+    if not notes:
+        show_error("No notes found.", root)
+        return
+
+    note_ids = [note["id"] for note in notes]
+
+    popup_title = f"Delete {section} note."
+    popup_label = f"Delete Note from {section}"
     popup_fields = [
         {
             "key": "note_id",
@@ -906,7 +932,7 @@ def add_location(section, section_type, root, left_frame=None, right_frame=None)
     popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
 
     def on_submit():
-        name_val = smart_title(values["name"].get())
+        name_val = values["name"].get()
         desc_text = values["info"].get("1.0", tk.END).strip()
         if not name_val:
             show_error("Please insert a name.", root)
@@ -915,20 +941,23 @@ def add_location(section, section_type, root, left_frame=None, right_frame=None)
             show_error("Please insert a description.", root)
             return
 
-        region = Region.load_from_file(section)
+        flag = check_unique(name_val, ("regions.json",), section_type, None, popup)
 
-        child_obj = ChildClass(name_val)
-        child_obj.set_information(desc_text)
+        if flag:
+            region = Region.load_from_file(section)
 
-        if section_type == "city":
-            region.add_city(child_obj)
-        elif section_type == "poi":
-            region.add_poi(child_obj)
+            child_obj = ChildClass(name_val)
+            child_obj.update_description(desc_text)
 
-        region.save_to_file()
-        from functions.pages import dynamic_page_loader
-        close_popup_and_refresh(popup, root, left_frame, right_frame,
-                                lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
+            if section_type == "city":
+                region.add_city(child_obj)
+            elif section_type == "poi":
+                region.add_poi(child_obj)
+
+            region.save_to_file()
+            from functions.pages import dynamic_page_loader
+            close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                    lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
 
     submit_buttons(root, popup, "Submit", on_submit)
 
@@ -993,23 +1022,25 @@ def reset_settings(root, left_frame=None, right_frame=None):
 
     def on_submit():
         data = load_json("settings.json")
-        data["Action Buffer"] = "0"
-        data["Power Buffer"] = "0"
-        data["Artificer"] = "1"
-        data["Barbarian"] = "1"
-        data["Bard"] = "1"
-        data["Cleric"] = "1"
-        data["Druid"] = "1"
-        data["Fighter"] = "1"
-        data["Monk"] = "1"
-        data["Paladin"] = "1"
-        data["Ranger"] = "1"
-        data["Rogue"] = "1"
-        data["Sorcerer"] = "1"
-        data["Warlock"] = "1"
-        data["Wizard"] = "1"
+        data["Action Buffer"] = 0
+        data["Power Buffer"] = 0
+        data["Artificer"] = 1
+        data["Barbarian"] = 1
+        data["Bard"] = 1
+        data["Cleric"] = 1
+        data["Druid"] = 1
+        data["Fighter"] = 1
+        data["Monk"] = 1
+        data["Paladin"] = 1
+        data["Ranger"] = 1
+        data["Rogue"] = 1
+        data["Sorcerer"] = 1
+        data["Warlock"] = 1
+        data["Wizard"] = 1
+        data["Custom"] = 1
         save_json("settings.json", data)
 
+        recalculate_combat_values()
         from functions.pages import settings_page
         close_popup_and_refresh(popup, root, left_frame, right_frame, settings_page)
     submit_buttons(root, popup, "Confirm", on_submit)
@@ -1017,11 +1048,31 @@ def reset_settings(root, left_frame=None, right_frame=None):
 def update_description(name, root, left_frame=None, right_frame=None):
     data = load_json("regions.json")
     item_data = type_flags(name, data)
+    result = find_category(name, data)
+    item_type = result[0]
+    match item_type:
+        case "Region":
+            item_data = result[1]
+            current_name = item_data.get("Region", "")
+        case "City":
+            item_data = result[1]
+            current_name = item_data.get("City", "")
+        case "POI":
+            item_data = result[1]
+            current_name = item_data.get("POI", "")
+        case "Place" | "Shop":
+            item_data = result[2]
+            current_name = item_data.get("Name", "")
     current_description = item_data.get("Description", "")
 
     popup_title = f"Update {name}'s description"
     popup_label = f"Update {name}'s description"
     popup_fields = [
+        {
+            "key": "name",
+            "label": "Name:",
+            "type": "entry"
+        },
         {
             "key": "description",
             "label": "Description:",
@@ -1029,6 +1080,9 @@ def update_description(name, root, left_frame=None, right_frame=None):
         }
     ]
     popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
+    name_widget = values.get("name")
+    if name_widget:
+        name_widget.insert(current_name)
     desc_widget = values.get("description")
     if desc_widget:
         desc_widget.insert("1.0", current_description)
@@ -1054,6 +1108,9 @@ def update_description(name, root, left_frame=None, right_frame=None):
 def add_feature(section, feature_type, root, left_frame=None, right_frame=None):
     data = load_json("regions.json")
     item_data = type_flags(section, data)
+    inventory_flag = False
+    if feature_type == "inventory":
+        inventory_flag = True
 
     popup_title = f"Add {feature_type} to {section}"
     popup_label = f"Add Note to {section}"
@@ -1069,29 +1126,60 @@ def add_feature(section, feature_type, root, left_frame=None, right_frame=None):
             "type": "text"
         }
     ]
+    if inventory_flag:
+        popup_fields.append({
+            "key": "price",
+            "label": "Price:",
+            "type": "entry"
+        })
     popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
     def on_submit():
         name_val = values["name"].get().strip().title()
         desc_val = values["description"].get("1.0", tk.END).strip()
+        if inventory_flag:
+            price_val = values["price"].get().strip().title()
 
         if not name_val or not desc_val:
             show_error("Please insert a name and description.", root)
             return
 
-        match feature_type:
-            case "shop":
-                item_data.setdefault("Shops", []).append({
-                    "Name": name_val,
-                    "Description": desc_val,
-                    "Notes": [],
-                    "Inventory": [],
-                    "People": []
-                })
+        parent_name = config.nav_stack[-1]
+        flag = check_unique(name_val, ("regions.json",), feature_type, None, popup, parent_name)
 
-        save_json("regions.json", data)
-        from functions.pages import dynamic_page_loader
-        close_popup_and_refresh(popup, root, left_frame, right_frame,
-                                lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
+        if flag:
+            match feature_type:
+                case "shop":
+                    item_data.setdefault("Shops", []).append({
+                        "Name": name_val,
+                        "Description": desc_val,
+                        "Notes": [],
+                        "Inventory": [],
+                        "People": []
+                    })
+                case "place":
+                    item_data.setdefault("Places", []).append({
+                        "Name": name_val,
+                        "Description": desc_val,
+                        "Notes": [],
+                        "Effects": [],
+                        "People": []
+                    })
+                case "effect":
+                    item_data.setdefault("Effects", []).append({
+                        "Name": name_val,
+                        "Description": desc_val
+                    })
+                case "inventory":
+                    item_data.setdefault("Inventory", []).append({
+                        "Name": name_val,
+                        "Description": desc_val,
+                        "Price": price_val
+                    })
+
+            save_json("regions.json", data)
+            from functions.pages import dynamic_page_loader
+            close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                    lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
     submit_buttons(root, popup, "Submit", on_submit)
 
 def remove_feature(section, feature_type, root, left_frame=None, right_frame=None):
@@ -1103,8 +1191,24 @@ def remove_feature(section, feature_type, root, left_frame=None, right_frame=Non
     match feature_type:
         case "shop":
             removal = "Shops"
-            for shop in item_data["Shops"]:
+            for shop in item_data.get("Shops", []):
                 feature_list.append(shop["Name"])
+        case "place":
+            removal = "Places"
+            for place in item_data.get("Places", []):
+                feature_list.append(place["Name"])
+        case "effect":
+            removal = "Effects"
+            for effect in item_data.get("Effects", []):
+                feature_list.append(effect["Name"])
+        case "inventory":
+            removal = "Inventory"
+            for inventory in item_data.get("Inventory", []):
+                feature_list.append(inventory["Name"])
+
+    if not feature_list:
+        show_error(f"No {feature_type} found in {section}.", root)
+        return
 
     popup_title = f"Add {feature_type} to {section}"
     popup_label = f"Add Note to {section}"
@@ -1130,3 +1234,141 @@ def remove_feature(section, feature_type, root, left_frame=None, right_frame=Non
                                 lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
 
     submit_buttons(root, popup, "Submit", on_submit)
+
+def update_feature(section, feature_type, root, left_frame=None, right_frame=None):
+    data = load_json("regions.json")
+    item_data = type_flags(section, data)
+    result = find_category(section, data)
+
+    inventory_flag = False
+    feature_list = []
+
+    item_type = result[0]
+    match item_type:
+        case "Region":
+            item_data = result[1]
+            current_name = item_data.get("Region", "")
+        case "City":
+            item_data = result[1]
+            current_name = item_data.get("City", "")
+        case "POI":
+            item_data = result[1]
+            current_name = item_data.get("POI", "")
+        case "Place" | "Shop":
+            item_data = result[2]
+            current_name = item_data.get("Name", "")
+
+    match feature_type:
+        case "shop":
+            update = "Shops"
+            for shop in item_data.get("Shops", []):
+                feature_list.append(shop["Name"])
+        case "place":
+            update = "Places"
+            for place in item_data.get("Places", []):
+                feature_list.append(place["Name"])
+        case "effect":
+            update = "Effects"
+            for effect in item_data.get("Effects", []):
+                feature_list.append(effect["Name"])
+        case "inventory":
+            inventory_flag = True
+            update = "Inventory"
+            for inventory in item_data.get("Inventory", []):
+                feature_list.append(inventory["Name"])
+
+    if not feature_list:
+        show_error(f"No {feature_type} found in {section}.", root)
+        return
+
+    popup_title = f"Update {feature_type}"
+    popup_label = f"Add Note to {section}"
+    popup_fields = [
+        {
+            "key": "name",
+            "label": f"Choose which {feature_type} to update",
+            "type": "radio",
+            "options": feature_list,
+            "default": feature_list[0]
+        }
+    ]
+    popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
+
+    def feature_selected():
+        selected_id = values["name"].get()
+        current_feature = next((n for n in item_data.get(update, []) if n["Name"] == selected_id), None)
+
+        desc_text = current_feature["Description"]
+        for w in popup.winfo_children():
+            w.destroy()
+
+        tk.Label(popup, text="Name").pack()
+        name_entry = tk.Entry(popup)
+        name_entry.pack()
+        name_entry.insert(0, current_feature["Name"])
+
+        tk.Label(popup, text="Description").pack()
+        text_widget = tk.Text(popup, height=8, width=50)
+        text_widget.pack(pady=10)
+        text_widget.insert("1.0", current_feature.get("Description", ""))
+
+        if inventory_flag:
+            tk.Label(popup, text="Price").pack()
+            price_entry = tk.Entry(popup)
+            price_entry.pack()
+            price_entry.insert(0, current_feature.get("Price", ""))
+
+        def on_submit():
+            new_name = name_entry.get().strip()
+            new_desc = text_widget.get("1.0", tk.END).strip()
+            if inventory_flag:
+                new_price = price_entry.get()
+                if not new_name or not new_desc or not new_price:
+                    show_error("Missing name, description, or price", root)
+            else:
+                if not new_name or not new_desc:
+                    show_error("Name and Description cannot be empty.", root)
+                    return
+
+            for feature in item_data.get(update, []):
+                if feature["Name"] == selected_id:
+                    feature["Name"] = new_name
+                    feature["Description"] = new_desc
+                    if inventory_flag:
+                        feature["Price"] = new_price
+                    break
+
+            save_json("regions.json", data)
+            from functions.pages import dynamic_page_loader
+            close_popup_and_refresh(popup, root, left_frame, right_frame,
+                                    lambda r, lf, rf: dynamic_page_loader(config.button_flag, r, lf, rf))
+
+        submit_buttons(root, popup, "Submit", on_submit)
+    submit_buttons(root, popup, f"Select {feature_type}", feature_selected)
+
+def clear_data(root, left_frame, right_frame):
+    popup = tk.Toplevel(root)
+    popup.title("Clear Data Confirmation")
+
+    instr_label = tk.Label(popup, text=f"This will delete all {config.clear_flag} data.\nPlease confirm.")
+    instr_label.pack(pady=10)
+
+    def on_submit():
+        if config.clear_flag == "party" or config.clear_flag == "of your non-setting":
+            save_json("party.json", [])
+            save_json("camp.json", [])
+        if config.clear_flag == "bestiary" or config.clear_flag == "of your non-setting":
+            save_json("random.json", [])
+            save_json("required.json", [])
+            save_json("archive.json", [])
+        if config.clear_flag == "regions" or config.clear_flag == "of your non-setting":
+            save_json("regions.json", {})
+        popup.destroy()
+
+    def on_cancel():
+        popup.destroy()
+
+    submit_btn = tk.Button(popup, text="Confirm", command=on_submit)
+    submit_btn.pack(pady=10)
+    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
+    cancel_btn.pack(pady=10)

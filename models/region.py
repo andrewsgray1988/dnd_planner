@@ -18,25 +18,22 @@ class LocationBase:
         self.notes = [n for n in self.notes if n["id"] != note_id]
         self.reindex_notes()
 
+    def update_description(self, description: str):
+        self.description = description
+
 class City(LocationBase):
     def __init__(self, name: str):
         super().__init__(name)
         self.shops = []
-        self.poi = []
-
-    def add_poi(self, poi_name: str):
-        self.poi.append(poi_name)
-
-    def add_shop(self, shop_name: str):
-        self.shops.append(shop_name)
+        self.places = []
 
     def to_dict(self):
         return {
             "City": self.name,
             "Description": self.description,
-            "Places": [p.to_dict() for p in self.poi],
-            "Shops": [s.to_dict() for s in self.shops],
-            "Persons of Interest": [p.to_dict() for p in self.persons],
+            "Places": self.places,
+            "Shops": self.shops,
+            "Persons of Interest": self.persons,
             "Notes": self.notes
         }
 
@@ -49,25 +46,18 @@ class City(LocationBase):
         data = load_json("regions.json")
         data[self.name] = self.to_dict()
         save_json("regions.json", data)
-
-    def update_description(self, description: str):
-        self.description = description
-        self.save_to_file()
 
 class PointOfInterest(LocationBase):
     def __init__(self, name: str):
         super().__init__(name)
         self.effects = []
 
-    def add_effect(self, effect: str):
-        self.effects.append(effect)
-
     def to_dict(self):
         return {
             "POI": self.name,
             "Description": self.description,
             "Effects": self.effects,
-            "Persons of Interest": [p.to_dict() for p in self.persons],
+            "Persons of Interest": self.persons,
             "Notes": self.notes
         }
 
@@ -80,10 +70,6 @@ class PointOfInterest(LocationBase):
         data = load_json("regions.json")
         data[self.name] = self.to_dict()
         save_json("regions.json", data)
-
-    def update_description(self, description: str):
-        self.description = description
-        self.save_to_file()
 
 class Region:
     def __init__(self, name: str, description: str = ""):

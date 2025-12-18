@@ -1,18 +1,4 @@
-from config import (
-    ARTI_MOD,
-    BARB_MOD,
-    BARD_MOD,
-    CLER_MOD,
-    DRUI_MOD,
-    FIGH_MOD,
-    MONK_MOD,
-    PALA_MOD,
-    RANG_MOD,
-    ROGU_MOD,
-    SORC_MOD,
-    WARL_MOD,
-    WIZA_MOD
-)
+from functions.general import load_json
 
 class BaseClass:
     def __init__(self, name, level, mod):
@@ -25,52 +11,70 @@ class BaseClass:
 
 class Artificer(BaseClass):
     def __init__(self, level):
-        super().__init__("Artificer", level, ARTI_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Artificer", level, float(settings["Artificer"]))
 
 class Barbarian(BaseClass):
     def __init__(self, level):
-        super().__init__("Barbarian", level, BARB_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Barbarian", level, float(settings["Barbarian"]))
 
 class Bard(BaseClass):
     def __init__(self, level):
-        super().__init__("Bard", level, BARD_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Bard", level, float(settings["Bard"]))
 
 class Cleric(BaseClass):
     def __init__(self, level):
-        super().__init__("Cleric", level, CLER_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Cleric", level, float(settings["Cleric"]))
 
 class Druid(BaseClass):
     def __init__(self, level):
-        super().__init__("Druid", level, DRUI_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Druid", level, float(settings["Druid"]))
 
 class Fighter(BaseClass):
     def __init__(self, level):
-        super().__init__("Fighter", level, FIGH_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Fighter", level, float(settings["Fighter"]))
 
 class Monk(BaseClass):
     def __init__(self, level):
-        super().__init__("Monk", level, MONK_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Monk", level, float(settings["Monk"]))
 
 class Paladin(BaseClass):
     def  __init__(self, level):
-        super().__init__("Paladin", level, PALA_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Paladin", level, float(settings["Paladin"]))
 
 class Ranger(BaseClass):
     def __init__(self, level):
-        super().__init__("Ranger", level, RANG_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Ranger", level, float(settings["Ranger"]))
 
 class Rogue(BaseClass):
     def __init__(self, level):
-        super().__init__("Rogue", level, ROGU_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Rogue", level, float(settings["Rogue"]))
 
 class Sorcerer(BaseClass):
     def __init__(self, level):
-        super().__init__("Sorcerer", level, SORC_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Sorcerer", level, float(settings["Sorcerer"]))
 
 class Warlock(BaseClass):
     def __init__(self, level):
-        super().__init__("Warlock", level, WARL_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Warlock", level, float(settings["Warlock"]))
 
 class Wizard(BaseClass):
     def __init__(self, level):
-        super().__init__("Wizard", level, WIZA_MOD)
+        settings = load_json("settings.json")
+        super().__init__("Wizard", level, float(settings["Wizard"]))
+
+class CustomClass(BaseClass):
+    def __init__(self, name, level):
+        settings = load_json("settings.json")
+        super().__init__(name, level, float(settings["Custom"]))

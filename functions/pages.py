@@ -16,7 +16,8 @@ from config import (
     REGIONS_BUTTON_LABELS,
     SPECIFIC_REGION_BUTTON_LABELS,
     CITY_BUTTON_LABELS,
-    POI_BUTTON_LABELS
+    POI_BUTTON_LABELS,
+    SHOP_BUTTON_LABELS
 )
 from text import (
     MAIN_PAGE_TEXT,
@@ -161,21 +162,22 @@ def settings_page(root, left_frame, right_frame):
 
 def dynamic_page_loader(name, root, left_frame, right_frame):
     data = load_json("regions.json")
-    region_font = font.Font(size=12, weight="bold")
+    if config.regions_flag is None and name != "Regions":
+        return
 
     def remaining_layout():
         pass
-    if config.nav_stack[-1] == "Regions":
+    if name == "Regions":
         buttons = REGIONS_BUTTON_LABELS
         header = REGIONS_TEXT
         def remaining_layout():
             for region_name, region_data in data.items():
-                region_label = tk.Label(scroll_frame, text=region_name, font=region_font, anchor="nw", justify="left")
+                region_label = tk.Label(scroll_frame, text=region_name, font=("Arial", 12, "bold"), anchor="nw", justify="left")
                 region_label.pack(fill=tk.BOTH, expand=True)
                 desc_label = tk.Label(scroll_frame, text=region_data["Description"], anchor="nw", justify="left",
                                       wraplength=500)
                 desc_label.pack(fill=tk.BOTH, expand=True, padx=(20, 0))
-    elif config.nav_stack[-2] == "Regions":
+    elif config.regions_flag and name == config.regions_flag:
         buttons = SPECIFIC_REGION_BUTTON_LABELS
         region_name = config.nav_stack[-1]
         region_data = data[region_name]
@@ -191,20 +193,17 @@ def dynamic_page_loader(name, root, left_frame, right_frame):
             if pois:
                 populate_info(region_data, "Points Of Interest", "POI", 20, scroll_frame)
     else:
+        if not config.regions_flag:
+            return
         info_name = config.regions_flag
-        info_type = find_category(name, {info_name: data[info_name]})
+        result = find_category(name, {info_name: data[info_name]})
+        info_type = result[0]
         region_data = data[info_name]
         item_data = None
 
         match info_type:
             case "City":
-                for city in region_data.get("Cities", []):
-                    if city["City"] == name:
-                        item_data = city
-                        break
-                if not item_data:
-                    return
-
+                _, item_data = result
                 buttons = CITY_BUTTON_LABELS
                 header = item_data.get("Description", "")
 
@@ -212,12 +211,56 @@ def dynamic_page_loader(name, root, left_frame, right_frame):
                     notes = item_data.get("Notes", [])
                     if notes:
                         populate_info(item_data, "Notes", "note", 20, scroll_frame)
-                    shops = item_data.get("Shops", [])
-                    if shops:
+                    if item_data.get("Places"):
+                        populate_info(item_data, "Places", "Name", 20, scroll_frame)
+                    if item_data.get("Shops"):
                         populate_info(item_data, "Shops", "Name", 20, scroll_frame)
-                    pois = item_data.get("Places", [])
-                    if pois:
-                        populate_info(item_data, "Places", "Place", 20, scroll_frame)
+
+            case "POI":
+                _, item_data = result
+                buttons = POI_BUTTON_LABELS
+                header = item_data.get("Description", "")
+
+                def remaining_layout():
+                    notes = item_data.get("Notes", [])
+                    if notes:
+                        populate_info(item_data, "Notes", "note", 20, scroll_frame)
+                    if item_data.get("Effects"):
+                        populate_info(item_data, "Effects", "Name", 20, scroll_frame)
+                    if item_data.get("People"):
+                        populate_info(item_data, "People", "Name", 20, scroll_frame)
+
+            case "Place":
+                _, parent_city, place = result
+                buttons = POI_BUTTON_LABELS
+                header = place.get("Description", "")
+
+                def remaining_layout():
+                    notes = place.get("Notes", [])
+                    if notes:
+                        populate_info(place, "Notes", "note", 20, scroll_frame)
+                    effects = place.get("Effects", [])
+                    if effects:
+                        populate_info(place, "Effects", "Name", 20, scroll_frame)
+                    people = place.get("People", [])
+                    if people:
+                        populate_info(place, "People", "Name", 20, scroll_frame)
+
+            case "Shop":
+                _, parent_city, shop = result
+                buttons = SHOP_BUTTON_LABELS
+                header = shop.get("Description", "")
+
+                def remaining_layout():
+                    notes = shop.get("Notes", [])
+                    if notes:
+                        populate_info(shop, "Notes", "note", 20, scroll_frame)
+                    inventory = shop.get("Inventory", [])
+                    if inventory:
+                        populate_info(shop, "Inventory", "Name", 20, scroll_frame)
+                    people = shop.get("People", [])
+                    if people:
+                        populate_info(shop, "People", "Name", 20, scroll_frame)
 
     scroll_frame = initiate_page(root, left_frame, f"{name} Page", header)
 

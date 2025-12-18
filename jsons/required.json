@@ -1,1 +1,8 @@
-[]
+[
+    {
+        "name": "Test 1",
+        "challenge_rating": "1",
+        "actions": "1",
+        "count": "1"
+    }
+]

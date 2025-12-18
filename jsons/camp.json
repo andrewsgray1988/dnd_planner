@@ -1,15 +1,15 @@
 [
     {
-        "name": "Billy",
-        "status": "NPC",
-        "armor_class": 15,
-        "magic_items": 4,
-        "combat_value": 4.45,
+        "name": "Test 2",
+        "status": "Player",
+        "armor_class": 1,
+        "magic_items": 1,
+        "combat_value": 1.1,
         "actions": 1.5,
         "classes": [
             {
-                "name": "Warlock",
-                "level": 4
+                "name": "Firefighter",
+                "level": 1
             }
         ]
     }

@@ -1,11 +1,6 @@
 [
     {
-        "name": "Test",
-        "challenge_rating": 1.0,
-        "actions": 1
-    },
-    {
-        "name": "Carl",
+        "name": "Test 2",
         "challenge_rating": "1",
         "actions": "1"
     }

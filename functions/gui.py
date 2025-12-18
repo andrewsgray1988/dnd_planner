@@ -13,6 +13,26 @@ from functions.general import (
     find_category
 )
 
+class SafeEntry:
+    def __init__(self, entry_widget):
+        self.entry = entry_widget
+    def get(self):
+        value = self.entry.get().strip()
+        if value.startswith("__CMD__:"):
+            value = value.removeprefix("__CMD__:")
+
+        words = value.split()
+        result = []
+        for word in words:
+            if word.lower().endswith("'s"):
+                result.append(word[:-2].capitalize() + "'s")
+            else:
+                result.append(word.capitalize())
+        return " ".join(result)
+
+    def insert(self, value):
+        self.entry.insert(0, value)
+
 def clear_widgets(parent):
     for w in parent.winfo_children():
         w.destroy()
@@ -62,9 +82,17 @@ def initiate_buttons(root, left_scroll_frame, right_scroll_frame, labels):
     clear_widgets(right_scroll_frame)
 
     for label in labels:
-        btn = tk.Button(right_scroll_frame, text=label,
-                        command=lambda l=label: on_button_click(l, root, left_scroll_frame, right_scroll_frame))
-        btn.pack(**BUTTON_PACK_OPTIONS)
+        if label != "Line Break":
+            if label.startswith("Label:"):
+                text = label[len("Label:"):].strip()
+                lbl = tk.Label(right_scroll_frame, text=text, anchor="center", justify="center", font=("Arial", 12, "bold"))
+                lbl.pack(fill="x", pady=2)
+            else:
+                btn = tk.Button(right_scroll_frame, text=label,
+                                command=lambda l=label: on_button_click(f"__CMD__:{l}", root, left_scroll_frame, right_scroll_frame))
+                btn.pack(**BUTTON_PACK_OPTIONS)
+        else:
+            line_break(right_scroll_frame)
     line_break(right_scroll_frame)
     return right_scroll_frame
 
@@ -76,19 +104,26 @@ def generate_buttons(root, left_scroll_frame, right_scroll_frame):
     current_name = config.nav_stack[-1]
 
     if current_name == "Regions":
-        items_to_list = list(data.keys())
+        if data:
+            items_to_list.append("Label: Regions")
+            items_to_list += list(data.keys())
     elif len(config.nav_stack) >= 2 and config.nav_stack[-2] == "Regions":
         current = data.get(current_name)
         cities = current.get("Cities", [])
         if cities:
+            items_to_list.append("Label: Cities")
             items_to_list += [c["City"] for c in current["Cities"]]
+            items_to_list.append("Line Break")
         pois = current.get("Points Of Interest", [])
         if pois:
+            items_to_list.append("Label: Points of Interest")
             items_to_list += [p["POI"] for p in current["Points Of Interest"]]
+            items_to_list.append("Line Break")
     elif len(config.nav_stack) >= 3 and config.nav_stack[-3] == "Regions":
         region_name = config.regions_flag
         region = data.get(region_name)
-        item_type = find_category(current_name, {region_name: region})
+        result = find_category(current_name, {region_name: region})
+        item_type = result[0]
         if item_type == "City":
             current = None
             for city in region.get("Cities", []):
@@ -97,16 +132,27 @@ def generate_buttons(root, left_scroll_frame, right_scroll_frame):
                     break
             places = current.get("Places", [])
             if places:
+                items_to_list.append("Label: Places")
                 items_to_list += [p["Name"] for p in places]
+                items_to_list.append("Line Break")
             shops = current.get("Shops", [])
             if shops:
+                items_to_list.append("Label: Shops")
                 items_to_list += [s["Name"] for s in shops]
-
+                items_to_list.append("Line Break")
 
     for label in items_to_list:
-        btn = tk.Button(right_scroll_frame, text=label,
-                        command=lambda l=label: on_button_click(l, root, left_scroll_frame, right_scroll_frame))
-        btn.pack(fill=tk.X, padx=5, pady=5)
+        if label != "Line Break":
+            if label.startswith("Label:"):
+                text = label[len("Label:"):].strip()
+                lbl = tk.Label(right_scroll_frame, text=text, anchor="center", justify="center", font=("Arial", 12, "bold"))
+                lbl.pack(fill="x", pady=2)
+            else:
+                btn = tk.Button(right_scroll_frame, text=label,
+                                command=lambda l=label: on_button_click(l, root, left_scroll_frame, right_scroll_frame))
+                btn.pack(fill=tk.X, padx=5, pady=5)
+        else:
+            line_break(right_scroll_frame)
 
 def submit_buttons(root, popup, text, function):
     btn_frame = tk.Frame(popup)
@@ -143,7 +189,7 @@ def initiate_popup(root, title, label, fields):
         if field_type == "entry":
             entry = tk.Entry(popup)
             entry.pack()
-            entries[key] = entry
+            entries[key] = SafeEntry(entry)
         elif field_type == "radio":
             frame = tk.Frame(popup)
             frame.pack()

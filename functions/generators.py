@@ -194,12 +194,12 @@ def generate_encounter(root, left_frame=None, right_frame=None):
     encounter_rating = 0
 
     for req in required_list:
-        tempcount = req["count"]
+        tempcount = int(req["count"])
         while tempcount > 0:
             generated_encounter.append(req)
             tempcount -= 1
-            encounter_actions += req["actions"]
-            encounter_rating += req["challenge_rating"]
+            encounter_actions += int(req["actions"])
+            encounter_rating += float(req["challenge_rating"])
 
     if random_list:
         failsafe = party_action + 4
@@ -207,8 +207,8 @@ def generate_encounter(root, left_frame=None, right_frame=None):
             failsafe -= 1
             rand_mon = random.choice(random_list)
             generated_encounter.append(rand_mon)
-            encounter_rating += (rand_mon["challenge_rating"] * 0.75)
-            encounter_actions += rand_mon["actions"]
+            encounter_rating += (float(rand_mon["challenge_rating"]) * 0.75)
+            encounter_actions += int(rand_mon["actions"])
 
     encounter_popup = tk.Toplevel(root)
     encounter_popup.title = "Suggested Encounter"

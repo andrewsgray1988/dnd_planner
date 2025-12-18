@@ -3,6 +3,7 @@ import json
 import tkinter as tk
 import config
 
+from models.player import Player
 from tkinter import ttk, font
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
@@ -23,30 +24,6 @@ def find_number(str_pull):
 
 def close_program(root, left_frame=None, right_frame=None):
     root.destroy()
-
-def clear_data(root, left_frame, right_frame):
-    popup = tk.Toplevel(root)
-    popup.title("Clear Data Confirmation")
-
-    instr_label = tk.Label(popup, text=f"This will delete all {config.clear_flag} data.\nPlease confirm.")
-    instr_label.pack(pady=10)
-
-    def on_submit():
-        if config.clear_flag == "party" or config.clear_flag == "of your non-setting":
-            save_json("party.json", [])
-        if config.clear_flag == "bestiary" or config.clear_flag == "of your non-setting":
-            save_json("random.json", [])
-            save_json("required.json", [])
-            save_json("archive.json", [])
-        popup.destroy()
-
-    def on_cancel():
-        popup.destroy()
-
-    submit_btn = tk.Button(popup, text="Confirm", command=on_submit)
-    submit_btn.pack(pady=10)
-    cancel_btn = tk.Button(popup, text="Cancel", command=on_cancel)
-    cancel_btn.pack(pady=10)
 
 def get_challenge_rating(root):
     popup = tk.Toplevel(root)
@@ -98,8 +75,7 @@ def navigate_to(page_name):
 def go_back():
     if len(config.nav_stack) > 1:
         config.nav_stack.pop()
-        return config.nav_stack[-1]
-    return "Main"
+    return config.nav_stack[-1]
 
 def line_break(frame):
     separator = ttk.Separator(frame, orient='horizontal')
@@ -113,54 +89,62 @@ def find_category(name, data):
 
     for city in region.get("Cities", []):
         if city.get("City") == name:
-            return "City"
+            return ("City", city)
+        for place in city.get("Places", []):
+            if place.get("Name") == name:
+                return ("Place", city, place)
+        for shop in city.get("Shops", []):
+            if shop.get("Name") == name:
+                return ("Shop", city, shop)
 
     for poi in region.get("Points Of Interest", []):
         if poi.get("POI") == name:
-            return "POI"
+            return ("POI", poi)
 
-    for note in region.get("Notes", []):
-        if note.get("note") == name:
-            return "note"
-
-    return "Region"
-
-def smart_title(text: str) -> str:
-    words = text.strip().split()
-    result = []
-
-    for word in words:
-        if "'s" in word.lower():
-            base, _, rest = word.partition("'")
-            result.append(base.capitalize() + "'s" + rest[2:])
-        else:
-            result.append(word.capitalize())
-
-    return " ".join(result)
+    return ("Region", region)
 
 def populate_info(data, section, subsection, pad, scroll_frame):
+    inventory_flag = False
+    if section == "Inventory":
+        inventory_flag = True
     region_font = font.Font(size=12, weight="bold")
     header_text = str(section)
     count = 1
     header_label = tk.Label(scroll_frame, text=header_text, font=region_font, anchor="nw", justify="left")
     header_label.pack(fill=tk.BOTH, expand=True)
-    for d in data[section]:
-        value = d.get(subsection, "Unnamed")
-        ins_text = f'{count}: {value}'
+    if not inventory_flag:
+        for d in data[section]:
+            value = d.get(subsection, "Unnamed")
+            ins_text = f'{count}: {value}'
 
-        label = tk.Label(scroll_frame, text=ins_text, anchor="nw", justify="left")
-        label.pack(fill=tk.BOTH, expand=True)
+            label = tk.Label(scroll_frame, text=ins_text, anchor="nw", justify="left")
+            label.pack(fill=tk.BOTH, expand=True)
 
-        desc = d.get("Description")
-        if desc:
-            desc_label = tk.Label(scroll_frame, text=desc, anchor="nw", justify="left", wraplength=500)
-            desc_label.pack(fill=tk.BOTH, expand=True, padx=(pad, 0))
-        count += 1
+            desc = d.get("Description")
+            if desc:
+                desc_label = tk.Label(scroll_frame, text=desc, anchor="nw", justify="left", wraplength=500)
+                desc_label.pack(fill=tk.BOTH, expand=True, padx=(pad, 0))
+            count += 1
+    else:
+        for item in data.get(section, []):
+            name = item.get("Name", "Unnamed")
+            price = item.get("Price", "Unknown price")
+            desc = item.get("Description", "")
+
+            line_text = f"{count}: {name} - {price}"
+            label = tk.Label(scroll_frame, text=line_text, anchor="nw", justify="left")
+            label.pack(fill=tk.BOTH, expand=True)
+
+            if desc:
+                desc_label = tk.Label(scroll_frame, text=desc, anchor="nw", justify="left", wraplength=500)
+                desc_label.pack(fill=tk.BOTH, expand=True, padx=(pad, 0))
+            count += 1
 
 def type_flags(name, data):
     regions_flag = config.regions_flag
     region_data = data.get(regions_flag)
-    item_type = find_category(name, data)
+    result = find_category(name, data)
+    item_type = result[0]
     item_data = region_data
 
     match item_type:
@@ -174,7 +158,94 @@ def type_flags(name, data):
                 if poi.get("POI") == name:
                     item_data = poi
                     break
+        case "Place":
+            for city in region_data.get("Cities", []):
+                for place in city.get("Places", []):
+                    if place.get("Name") == name:
+                        item_data = place
+                        return item_data
+        case "Shop":
+            for city in region_data.get("Cities", []):
+                for shop in city.get("Shops", []):
+                    if shop.get("Name") == name:
+                        item_data = shop
+                        return item_data
         case _:
-            print(f"item_type = {item_type} and failed the cases.")
+            pass
 
     return item_data
+
+def recalculate_combat_values():
+    from config import VALID_MAP
+    for filename in ["party.json", "camp.json"]:
+        data = load_json(filename)
+        updated_data = []
+
+        for p in data:
+            player_obj = Player(p["name"], p["armor_class"], p["magic_items"], p.get("status", "Player"))
+
+            for cls in p.get("classes", []):
+                cls_name = cls["name"]
+                cls_level = cls["level"]
+                cls_lower = cls_name.lower()
+
+                if cls_lower in VALID_MAP:
+                    class_type = VALID_MAP[cls_lower]
+                else:
+                    from models.classes import CustomClass
+                    class_type = (lambda name: lambda level: CustomClass(name, level))(cls_name)
+
+                player_obj.add_class(class_type, cls_level)
+
+            updated_data.append(player_obj.to_dict())
+
+        save_json(filename, updated_data)
+
+def check_unique(name, jsons, level, context, popup, parent_name=None):
+    for json_file in jsons:
+        data = load_json(json_file)
+
+        if isinstance(data, dict):
+            if level == "Region":
+                if name in data:
+                    show_error(f"Region '{name}' already exists.", popup)
+                    return False
+
+            elif level in ("city", "poi"):
+                region = data.get(config.regions_flag)
+                if not region:
+                    return True
+
+                for city in region.get("Cities", []):
+                    if city.get("City") == name:
+                        show_error(f"{name} already exists in this region.", popup)
+                        return False
+
+                for poi in region.get("Points Of Interest", []):
+                    if poi.get("POI") == name:
+                        show_error(f"{name} already exists in this region.", popup)
+                        return False
+
+            elif level in ("place", "shop"):
+                result = find_category(parent_name, data)
+                if not result or result[0] != "City":
+                    return True
+
+                city = result[1]
+
+                for place in city.get("Places", []):
+                    if place.get("Name") == name:
+                        show_error(f"{name} already exists in {parent_name}.", popup)
+                        return False
+
+                for shop in city.get("Shops", []):
+                    if shop.get("Name") == name:
+                        show_error(f"{name} already exists in {parent_name}.", popup)
+                        return False
+
+        elif isinstance(data, list):
+            for dat in data:
+                if dat[context] == name:
+                    show_error(f"{name} already exists.", popup)
+                    return False
+    return True

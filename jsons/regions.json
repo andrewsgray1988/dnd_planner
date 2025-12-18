@@ -1,41 +1,61 @@
 {
-    "California": {
-        "Region": "California",
-        "Description": "This description is updated",
+    "Elwynn Forest": {
+        "Region": "Elwynn Forest",
+        "Description": "Human lands, they stinky",
         "Cities": [
             {
-                "City": "Los Angeles",
-                "Description": "Satan's butthole itself, now with new McDonalds. And a burger king",
+                "City": "Test",
+                "Description": "1",
                 "Places": [],
                 "Shops": [
                     {
-                        "Name": "Mcdonalds",
-                        "Description": "Mickey D's",
+                        "Name": "Test",
+                        "Description": "1",
                         "Notes": [],
                         "Inventory": [],
                         "People": []
                     },
                     {
-                        "Name": "Burger King",
-                        "Description": "Lucifer's rivaly shop to the McDonalds",
+                        "Name": "Test2",
+                        "Description": "2",
                         "Notes": [],
                         "Inventory": [],
                         "People": []
                     }
                 ],
                 "Persons of Interest": [],
-                "Notes": [
-                    {
-                        "id": 1,
-                        "note": "Here's a note"
-                    }
-                ]
+                "Notes": []
+            },
+            {
+                "City": "Elwynn Forest",
+                "Description": "Test",
+                "Places": [],
+                "Shops": [],
+                "Persons of Interest": [],
+                "Notes": []
             }
         ],
         "Points Of Interest": [
             {
-                "POI": "Hollywood",
-                "Description": "Where souls go to die. Or succeed wildly",
+                "POI": "Fargodeep Mine",
+                "Description": "Abandoned gold mine overran by Kobolds",
+                "Effects": [
+                    {
+                        "Name": "Effect",
+                        "Description": "Effect"
+                    }
+                ],
+                "Persons of Interest": [],
+                "Notes": [
+                    {
+                        "id": 1,
+                        "note": "Note"
+                    }
+                ]
+            },
+            {
+                "POI": "Hogger's Camp",
+                "Description": "Gnoll camp",
                 "Effects": [],
                 "Persons of Interest": [],
                 "Notes": []
@@ -44,12 +64,34 @@
         "Notes": [
             {
                 "id": 1,
-                "note": "This is a note"
+                "note": "The human starting area"
             },
             {
                 "id": 2,
-                "note": "Third note"
+                "note": "There is a lake running through the zone"
+            },
+            {
+                "id": 3,
+                "note": "Thank you for helping me casey"
+            },
+            {
+                "id": 4,
+                "note": "This is note #5"
             }
         ]
+    },
+    "Chicago": {
+        "Region": "Chicago",
+        "Description": "Test",
+        "Cities": [],
+        "Points Of Interest": [],
+        "Notes": []
+    },
+    "Oklahoma": {
+        "Region": "Oklahoma",
+        "Description": "Test 2",
+        "Cities": [],
+        "Points Of Interest": [],
+        "Notes": []
     }
 }
