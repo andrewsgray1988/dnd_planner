@@ -195,7 +195,7 @@ def on_button_click(label, root, left_frame=None, right_frame=None):
                 print("Not implemented yet")
     else:
         from functions.pages import dynamic_page_loader
-        navigate_to(label)
+        navigate_to(label, parent=config.button_flag)
         config.button_flag = label
         if config.nav_stack[-2] == "Regions":
             config.regions_flag = config.nav_stack[-1]

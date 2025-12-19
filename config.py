@@ -10,7 +10,9 @@ button_flag = None
 back_flag = None
 party_flag = None
 last_flag = None
+parent_flag = None
 nav_stack = ['Main']
+nav_stack_context = [('Main', None)]
 
 VALID_MAP = {
             "artificer": Artificer,

@@ -67,15 +67,29 @@ def show_error(msg, root):
     error_popup.grab_set()
     root.wait_window(error_popup)
 
-def navigate_to(page_name):
+def navigate_to(page_name, parent=None):
     if not config.nav_stack or config.nav_stack[-1] != page_name:
         config.nav_stack.append(page_name)
     config.back_flag = page_name
 
+    if not config.nav_stack_context or config.nav_stack_context[-1][0] != page_name:
+        config.nav_stack_context.append((page_name, parent))
+    config.button_flag = page_name
+    config.parent_flag = parent
+
 def go_back():
     if len(config.nav_stack) > 1:
         config.nav_stack.pop()
-    return config.nav_stack[-1]
+    back_page = config.nav_stack[-1]
+
+    if hasattr(config, "nav_stack_context") and len(config.nav_stack_context) > 1:
+        config.nav_stack_context.pop()
+    if hasattr(config, "nav_stack_context"):
+        previous_page, parent = config.nav_stack_context[-1]
+        config.button_flag = previous_page
+        config.parent_flag = parent
+        return previous_page
+    return back_page
 
 def line_break(frame):
     separator = ttk.Separator(frame, orient='horizontal')
