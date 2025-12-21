@@ -1,16 +1,1 @@
-[
-    {
-        "name": "Wendothy",
-        "status": "Player",
-        "armor_class": 1,
-        "magic_items": 1,
-        "combat_value": 1.1,
-        "actions": 1.5,
-        "classes": [
-            {
-                "name": "Whore",
-                "level": 1
-            }
-        ]
-    }
-]
+[]

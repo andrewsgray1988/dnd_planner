@@ -90,6 +90,16 @@ def initiate_buttons(root, left_scroll_frame, right_scroll_frame, labels):
                     font=("Arial", 12, "bold")
                 )
                 lbl.pack(fill="x", pady=2)
+            elif label == "Clear Party Data":
+                tk.Label(right_scroll_frame, text="Delete all selected. This is a permanent action, and can't be undone.").pack(fill="x")
+                display_name = label  # What the user sees
+                actual_name = f"__CMD__:{label}"  # Exact string from JSON, preserves case
+                btn = tk.Button(
+                    right_scroll_frame,
+                    text=display_name,
+                    command=lambda n=actual_name: on_button_click(n, root, left_scroll_frame, right_scroll_frame)
+                )
+                btn.pack(**BUTTON_PACK_OPTIONS)
             else:
                 display_name = label      # What the user sees
                 actual_name = f"__CMD__:{label}"       # Exact string from JSON, preserves case
