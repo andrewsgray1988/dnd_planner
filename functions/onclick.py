@@ -121,6 +121,14 @@ def on_button_click(label, root, left_frame=None, right_frame=None):
                         from functions.pages import dynamic_page_loader
                         config.button_flag = "Regions"
                         func = lambda r=root, lf=left_frame, rf=right_frame: dynamic_page_loader(previous, r, lf, rf)
+                    case "Party":
+                        from functions.pages import manage_party_page
+                        config.button_flag = "Party"
+                        func = manage_party_page
+                    case "Bestiary":
+                        from functions.pages import manage_bestiary_page
+                        config.button_flag = "Bestiary"
+                        func = manage_bestiary_page
                     case _:
                         from functions.pages import dynamic_page_loader
                         func = lambda r=root, lf=left_frame, rf=right_frame: dynamic_page_loader(previous, r, lf, rf)
@@ -200,10 +208,9 @@ def on_button_click(label, root, left_frame=None, right_frame=None):
         if config.nav_stack[-2] == "Regions":
             config.regions_flag = config.nav_stack[-1]
         func = dynamic_page_loader(label, root, left_frame, right_frame)
-        print(config.nav_stack)
 
     if func:
         if left_frame and right_frame:
             func(root, left_frame, right_frame)
         else:
-            func(root)
+            func(root, left_frame=None, right_frame=None)

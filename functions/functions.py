@@ -1,3 +1,5 @@
+from unittest import case
+
 import config
 import tkinter as tk
 
@@ -13,7 +15,8 @@ from functions.general import (
     type_flags,
     recalculate_combat_values,
     check_unique,
-    validate_and_convert
+    validate_and_convert,
+    strip_type_suffix
 )
 from functions.gui import (
     create_scrollable_frame,
@@ -70,7 +73,7 @@ def add_monster(root, left_frame=None, right_frame=None):
         destination = values["dest"].get()
 
         if destination == "required":
-            validation_list = [(name_val, str, "Name"), (cr_val, int, "Challenge Rating"), (actions_val, int, "Actions"), (count_val, int, "Encounter Count"), (destination, str, "Destination")]
+            validation_list = [(name_val, str, "Name"), (cr_val, float, "Challenge Rating"), (actions_val, int, "Actions"), (count_val, int, "Encounter Count"), (destination, str, "Destination")]
             checked = validate_and_convert(validation_list, True, root)
             if not checked:
                 return
@@ -334,6 +337,12 @@ def adjust_setting(root, left_frame=None, right_frame=None):
             if value < 0 and setting not in ("Action Buffer", "Power Buffer"):
                 show_error(f"{setting} can't be negative.", root)
                 return
+
+            if value > 7680 and setting == "Width":
+                value = 7680
+
+            if value > 4320 and setting == "Height":
+                value = 4320
 
             new_values[setting] = value
 
@@ -694,8 +703,8 @@ def add_new_region(root, left_frame=None, right_frame=None):
         name_val = values["name"].get().strip().title()
         desc_val = values["description"].get("1.0", tk.END).strip()
 
-        if not name_val:
-            show_error("Please add a name to continue.", root)
+        if not name_val or not desc_val:
+            show_error("Please add a name and description to continue.", root)
             return
 
         flag = check_unique(name_val, ("regions.json",), "Region", None, popup)
@@ -910,6 +919,10 @@ def add_location(section, section_type, root, left_frame=None, right_frame=None)
             show_error("Please insert a description.", root)
             return
 
+        if section_type == "poi":
+            name_val = name_val + " (POI)"
+        else:
+            name_val = name_val + f" ({section_type.title()})"
         flag = check_unique(name_val, ("regions.json",), section_type, None, popup)
 
         if flag:
@@ -1032,6 +1045,8 @@ def update_description(name, root, left_frame=None, right_frame=None):
         case "Place" | "Shop":
             item_data = result[2]
             current_name = item_data.get("Name", "")
+
+    base_name, suffix = strip_type_suffix(current_name)
     current_description = item_data.get("Description", "")
 
     popup_title = f"Update {name}'s description"
@@ -1051,17 +1066,70 @@ def update_description(name, root, left_frame=None, right_frame=None):
     popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
     name_widget = values.get("name")
     if name_widget:
-        name_widget.insert(current_name)
+        name_widget.insert(base_name)
     desc_widget = values.get("description")
     if desc_widget:
         desc_widget.insert("1.0", current_description)
         desc_widget.mark_set("insert", "1.0")
 
     def on_submit():
+        new_name = name_widget.get().strip().title()
         new_text = desc_widget.get("1.0", tk.END).strip()
-        if not new_text:
-            show_error("Please insert a description.", root)
+
+        if not new_name:
+            show_error("Please enter a name.", popup)
             return
+
+        if not new_text:
+            show_error("Please insert a description.", popup)
+            return
+
+        if suffix:
+            new_name = new_name + f" {suffix}"
+
+        stack = config.nav_stack
+
+        if len(stack) == 3:
+            level = "Region"
+            parent_name = None
+        elif len(stack) == 4:
+            level = "City"
+            parent_name = stack[2]
+        elif len(stack) == 5:
+            level = item_type
+            parent_name = stack[3]
+        else:
+            show_error("Unknown navigation context.", popup)
+            return
+
+        if new_name != current_name:
+            if not check_unique(
+                    new_name,
+                    ["regions.json"],
+                    level.lower(),
+                    context=None,
+                    popup=popup,
+                    parent_name=parent_name
+            ):
+                return
+
+            match level:
+                case "Region":
+                    # Rename dict key
+                    data[new_name] = data.pop(current_name)
+                    data[new_name]["Region"] = new_name
+
+                case "City":
+                    item_data["City"] = new_name
+
+                case "POI":
+                    item_data["POI"] = new_name
+
+                case "Place" | "Shop":
+                    item_data["Name"] = new_name
+
+        config.nav_stack[-1] = new_name
+        config.button_flag = new_name
 
         item_data["Description"] = new_text
         save_json("regions.json", data)
@@ -1103,14 +1171,17 @@ def add_feature(section, feature_type, root, left_frame=None, right_frame=None):
         })
     popup, values = initiate_popup(root, popup_title, popup_label, popup_fields)
     def on_submit():
-        name_val = values["name"].get().strip().title()
+        name_val = values["name"].get().strip()
         desc_val = values["description"].get("1.0", tk.END).strip()
         if inventory_flag:
-            price_val = values["price"].get().strip().title()
+            price_val = values["price"].get().strip()
 
         if not name_val or not desc_val:
             show_error("Please insert a name and description.", root)
             return
+
+        if not inventory_flag:
+            name_val = name_val + f" ({feature_type.title()})"
 
         parent_name = config.nav_stack[-1]
         flag = check_unique(name_val, ("regions.json",), feature_type, None, popup, parent_name)
@@ -1267,14 +1338,16 @@ def update_feature(section, feature_type, root, left_frame=None, right_frame=Non
         selected_id = values["name"].get()
         current_feature = next((n for n in item_data.get(update, []) if n["Name"] == selected_id), None)
 
-        desc_text = current_feature["Description"]
         for w in popup.winfo_children():
             w.destroy()
+
+        raw_name = current_feature["Name"]
+        base_name, suffix = strip_type_suffix(raw_name)
 
         tk.Label(popup, text="Name").pack()
         name_entry = tk.Entry(popup)
         name_entry.pack()
-        name_entry.insert(0, current_feature["Name"])
+        name_entry.insert(0, base_name)
 
         tk.Label(popup, text="Description").pack()
         text_widget = tk.Text(popup, height=8, width=50)
@@ -1298,6 +1371,9 @@ def update_feature(section, feature_type, root, left_frame=None, right_frame=Non
                 if not new_name or not new_desc:
                     show_error("Name and Description cannot be empty.", root)
                     return
+
+            if not inventory_flag:
+                new_name = new_name + f" {suffix}"
 
             for feature in item_data.get(update, []):
                 if feature["Name"] == selected_id:

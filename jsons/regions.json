@@ -1,1 +1,42 @@
-{}
+{
+    "Chicago": {
+        "Region": "Chicago",
+        "Description": "It stink",
+        "Cities": [
+            {
+                "City": "Jellybeally (City)",
+                "Description": "test",
+                "Places": [],
+                "Shops": [],
+                "Persons of Interest": [],
+                "Notes": []
+            }
+        ],
+        "Points Of Interest": [
+            {
+                "POI": "That Cave Over There (POI)",
+                "Description": "It smelly too",
+                "Effects": [],
+                "Persons of Interest": [],
+                "Notes": []
+            }
+        ],
+        "Notes": [
+            {
+                "id": 1,
+                "note": "Poop"
+            },
+            {
+                "id": 2,
+                "note": "This is note #2"
+            }
+        ]
+    },
+    "Los Angeles": {
+        "Region": "Los Angeles",
+        "Description": "Peeyew",
+        "Cities": [],
+        "Points Of Interest": [],
+        "Notes": []
+    }
+}

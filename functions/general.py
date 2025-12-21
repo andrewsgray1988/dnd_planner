@@ -2,6 +2,7 @@ import os
 import json
 import tkinter as tk
 import config
+import re
 
 from models.player import Player
 from tkinter import ttk, font
@@ -40,7 +41,7 @@ def get_challenge_rating(root):
     def submit():
         val = entry.get().strip()
         if not val.isdigit():
-            show_error("Value must be an integer", root)
+            show_error("Value must be an positive non-decimal number", root)
             return
         result["value"] = int(val)
         popup.destroy()
@@ -110,19 +111,19 @@ def populate_info(data, section, subsection, pad, scroll_frame):
     region_font = font.Font(size=12, weight="bold")
     header_text = str(section)
     count = 1
-    header_label = tk.Label(scroll_frame, text=header_text, font=region_font, anchor="nw", justify="left")
+    header_label = tk.Label(scroll_frame, text=header_text, font=region_font, anchor="nw", justify="left", wraplength=scroll_frame.wrap_width)
     header_label.pack(fill=tk.BOTH, expand=True)
     if not inventory_flag:
         for d in data[section]:
             value = d.get(subsection, "Unnamed")
             ins_text = f'{count}: {value}'
 
-            label = tk.Label(scroll_frame, text=ins_text, anchor="nw", justify="left")
+            label = tk.Label(scroll_frame, text=ins_text, anchor="nw", justify="left", wraplength=scroll_frame.wrap_width)
             label.pack(fill=tk.BOTH, expand=True)
 
             desc = d.get("Description")
             if desc:
-                desc_label = tk.Label(scroll_frame, text=desc, anchor="nw", justify="left", wraplength=500)
+                desc_label = tk.Label(scroll_frame, text=desc, anchor="nw", justify="left", wraplength=scroll_frame.wrap_width)
                 desc_label.pack(fill=tk.BOTH, expand=True, padx=(pad, 0))
             count += 1
     else:
@@ -132,11 +133,11 @@ def populate_info(data, section, subsection, pad, scroll_frame):
             desc = item.get("Description", "")
 
             line_text = f"{count}: {name} - {price}"
-            label = tk.Label(scroll_frame, text=line_text, anchor="nw", justify="left")
+            label = tk.Label(scroll_frame, text=line_text, anchor="nw", justify="left", wraplength=scroll_frame.wrap_width)
             label.pack(fill=tk.BOTH, expand=True)
 
             if desc:
-                desc_label = tk.Label(scroll_frame, text=desc, anchor="nw", justify="left", wraplength=500)
+                desc_label = tk.Label(scroll_frame, text=desc, anchor="nw", justify="left", wraplength=scroll_frame.wrap_width)
                 desc_label.pack(fill=tk.BOTH, expand=True, padx=(pad, 0))
             count += 1
 
@@ -202,11 +203,15 @@ def recalculate_combat_values():
         save_json(filename, updated_data)
 
 def check_unique(name, jsons, level, context, popup, parent_name=None):
+    name_norm = name.lower()
+    if level:
+        level = level.lower()
+
     for json_file in jsons:
         data = load_json(json_file)
 
         if isinstance(data, dict):
-            if level == "Region":
+            if level == "region":
                 if name in data:
                     show_error(f"Region '{name}' already exists.", popup)
                     return False
@@ -217,35 +222,43 @@ def check_unique(name, jsons, level, context, popup, parent_name=None):
                     return True
 
                 for city in region.get("Cities", []):
-                    if city.get("City") == name:
+                    if city.get("City").lower() == name_norm:
                         show_error(f"{name} already exists in this region.", popup)
                         return False
 
                 for poi in region.get("Points Of Interest", []):
-                    if poi.get("POI") == name:
+                    if poi.get("POI").lower() == name_norm:
                         show_error(f"{name} already exists in this region.", popup)
                         return False
 
+
             elif level in ("place", "shop"):
-                result = find_category(parent_name, data)
-                if not result or result[0] != "City":
+
+                if not parent_name:
                     return True
 
-                city = result[1]
+                # Find parent region first
 
-                for place in city.get("Places", []):
-                    if place.get("Name") == name:
-                        show_error(f"{name} already exists in {parent_name}.", popup)
-                        return False
+                for region in data.values():
+                    for city in region.get("Cities", []):
+                        if city.get("City") == parent_name:
+                            # Check places
 
-                for shop in city.get("Shops", []):
-                    if shop.get("Name") == name:
-                        show_error(f"{name} already exists in {parent_name}.", popup)
-                        return False
+                            for place in city.get("Places", []):
+                                if place.get("Name", "").lower() == name_norm:
+                                    show_error(f"{name} already exists in {parent_name}.", popup)
+                                    return False
 
+                            # Check shops
+
+                            for shop in city.get("Shops", []):
+                                if shop.get("Name", "").lower() == name_norm:
+                                    show_error(f"{name} already exists in {parent_name}.", popup)
+
+                                    return False
         elif isinstance(data, list):
             for dat in data:
-                if dat[context] == name:
+                if dat.get(context, "").lower() == name_norm:
                     show_error(f"{name} already exists.", popup)
                     return False
     return True
@@ -274,3 +287,27 @@ def validate_and_convert(to_list, req_flag, root):
                     return None
             converted_list.append(converted)
     return converted_list
+
+def infer_context_from_nav():
+    stack = config.nav_stack
+
+    if len(stack) == 3:
+        return "Region", None
+
+    if len(stack) == 4:
+        return "City", stack[2]        # parent Region
+
+    if len(stack) == 5:
+        return "Place", stack[3]       # parent City
+
+    return None, None
+
+def strip_type_suffix(name: str) -> str:
+    match = re.search(r"\s+(\([^)]+\))$", name)
+
+    if match:
+        subtype = match.group(1)
+        base_name = name[:match.start()].strip()
+        return base_name, subtype
+
+    return name.strip(), None

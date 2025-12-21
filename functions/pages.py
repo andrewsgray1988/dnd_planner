@@ -40,8 +40,23 @@ from functions.general import (
 def main_page(root, left_scroll_frame, right_scroll_frame):
     scroll_frame = initiate_page(root, left_scroll_frame, "Main Page", MAIN_PAGE_TEXT)
 
-    placeholder_label = tk.Label(scroll_frame, text=MAIN_PAGE_BODY_TEXT, anchor="nw", justify="left")
-    placeholder_label.pack(fill=tk.BOTH, expand=True)
+    tk.Label(scroll_frame, text="Hello and welcome to the DnD Planner!", font=("Arial", 13)).pack(anchor="w")
+    line_break(scroll_frame)
+
+    tk.Label(scroll_frame, text="Navigation", font=("Arial", 18, "bold")).pack(anchor="w")
+    line_break(scroll_frame)
+    tk.Label(scroll_frame, text="Party and NPCs", font=("Arial", 12, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Manage party members and party NPCs, and those at camp.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Bestiary", font=("Arial", 14, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Manage creatures to enable combat generator.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Regions", font=("Arial", 14, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Manage regions and location info within the world.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Generators", font=("Arial", 14, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="A list of helpful generators for DnD sessions.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Settings", font=("Arial", 14, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Adjust settings for the program.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Close Program", font=("Arial", 14, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Closes the program.").pack(anchor="w")
 
     line_break(scroll_frame)
 
@@ -62,33 +77,33 @@ def manage_party_page(root, left_frame, right_frame):
             npc_data.append(char)
 
     if party_data:
-        header_label = tk.Label(scroll_frame, text="Active Player Characters", font=("Arial", 12, "bold"))
+        header_label = tk.Label(scroll_frame, text="Active Player Characters", font=("Arial", 12, "bold"), wraplength=scroll_frame.wrap_width)
         header_label.pack(pady=10)
 
         for member in party_data:
             classes_text = ", ".join([f"{cls['name']} {cls['level']}" for cls in member['classes']])
             member_text = f"{member['name']} - Combat Value: {member['combat_value']}, AC: {member['armor_class']}, Magic Item Count: {member['magic_items']}, Classes: {classes_text}"
-            label = tk.Label(scroll_frame, text=member_text, anchor="w", justify="left")
+            label = tk.Label(scroll_frame, text=member_text, anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
             label.pack(fill="x", pady=2)
 
     if npc_data:
-        header_label = tk.Label(scroll_frame, text="Active NPCs", font=("Arial", 12, "bold"))
+        header_label = tk.Label(scroll_frame, text="Active NPCs", font=("Arial", 12, "bold"), wraplength=scroll_frame.wrap_width)
         header_label.pack(pady=10)
 
         for member in npc_data:
             classes_text = ", ".join([f"{cls['name']} {cls['level']}" for cls in member['classes']])
             member_text = f"{member['name']} - Combat Value: {member['combat_value']}, AC: {member['armor_class']}, Magic Item Count: {member['magic_items']}, Classes: {classes_text}"
-            label = tk.Label(scroll_frame, text=member_text, anchor="w", justify="left")
+            label = tk.Label(scroll_frame, text=member_text, anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
             label.pack(fill="x", pady=2)
 
     if inactive:
-        header_label = tk.Label(scroll_frame, text="Characters at Camp", font=("Arial", 12, "bold"))
+        header_label = tk.Label(scroll_frame, text="Characters at Camp", font=("Arial", 12, "bold"), wraplength=scroll_frame.wrap_width)
         header_label.pack(pady=10)
 
         for member in inactive:
             classes_text = ", ".join([f"{cls['name']} {cls['level']}" for cls in member['classes']])
             member_text = f"{member['name']} ({member['status']}) - Combat Value: {member['combat_value']}, AC: {member['armor_class']}, Magic Item Count: {member['magic_items']}, Classes: {classes_text}"
-            label = tk.Label(scroll_frame, text=member_text, anchor="w", justify="left")
+            label = tk.Label(scroll_frame, text=member_text, anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
             label.pack(fill="x", pady=2)
 
     initiate_buttons(root, left_frame, right_frame, MANAGE_PARTY_BUTTON_LABELS)
@@ -96,35 +111,35 @@ def manage_party_page(root, left_frame, right_frame):
 def manage_bestiary_page(root, left_frame, right_frame):
     scroll_frame = initiate_page(root, left_frame, "Bestiary Page", BESTIARY_PAGE_TEXT)
 
-    placeholder_label = tk.Label(scroll_frame, text=BESTIARY_PAGE_BODY_TEXT, anchor="nw", justify="left")
+    placeholder_label = tk.Label(scroll_frame, text=BESTIARY_PAGE_BODY_TEXT, anchor="nw", justify="left", wraplength=scroll_frame.wrap_width)
     placeholder_label.pack(fill="x", pady=5)
 
     required_data = load_json("required.json")
     random_data = load_json("random.json")
     archive_data = load_json("archive.json")
 
-    header_label = tk.Label(scroll_frame, text="Required Encounters", font=("Arial", 12, "bold"))
+    header_label = tk.Label(scroll_frame, text="Required Encounters", font=("Arial", 12, "bold"), wraplength=scroll_frame.wrap_width)
     header_label.pack(pady=10)
 
     for creature in required_data:
         creature_text = f"{creature['name']} - Challenge Rating: {creature['challenge_rating']}, Actions: {creature['actions']}, Creature Count: {creature['count']}"
-        label = tk.Label(scroll_frame, text=creature_text, anchor="w", justify="left")
+        label = tk.Label(scroll_frame, text=creature_text, anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
         label.pack(fill="x", pady=2)
 
-    header_label = tk.Label(scroll_frame, text="Random Encounters", font=("Arial", 12, "bold"))
+    header_label = tk.Label(scroll_frame, text="Random Encounters", font=("Arial", 12, "bold"), wraplength=scroll_frame.wrap_width)
     header_label.pack(pady=10)
 
     for creature in random_data:
         creature_text = f"{creature['name']} - Challenge Rating: {creature['challenge_rating']}, Actions: {creature['actions']}"
-        label = tk.Label(scroll_frame, text=creature_text, anchor="w", justify="left")
+        label = tk.Label(scroll_frame, text=creature_text, anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
         label.pack(fill="x", pady=2)
 
-    header_label = tk.Label(scroll_frame, text="Archived Encounters", font=("Arial", 12, "bold"))
+    header_label = tk.Label(scroll_frame, text="Archived Encounters", font=("Arial", 12, "bold"), wraplength=scroll_frame.wrap_width)
     header_label.pack(pady=10)
 
     for creature in archive_data:
         creature_text = f"{creature['name']} - Challenge Rating: {creature['challenge_rating']}, Actions: {creature['actions']}"
-        label = tk.Label(scroll_frame, text=creature_text, anchor="w", justify="left")
+        label = tk.Label(scroll_frame, text=creature_text, anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
         label.pack(fill="x", pady=2)
 
     initiate_buttons(root, left_frame, right_frame, MANAGE_BESTIARY_BUTTON_LABELS)
@@ -132,7 +147,7 @@ def manage_bestiary_page(root, left_frame, right_frame):
 def generators_page(root, left_frame, right_frame):
     scroll_frame = initiate_page(root, left_frame, "Generators Page", GENERATORS_PAGE_TEXT)
 
-    placeholder_label = tk.Label(scroll_frame, text=GENERATORS_PAGE_BODY_TEXT, anchor="nw", justify="left")
+    placeholder_label = tk.Label(scroll_frame, text=GENERATORS_PAGE_BODY_TEXT, anchor="nw", justify="left", wraplength=scroll_frame.wrap_width)
     placeholder_label.pack(fill=tk.BOTH, expand=True)
 
     initiate_buttons(root, left_frame, right_frame, GENERATORS_BUTTON_LABELS)
@@ -140,7 +155,7 @@ def generators_page(root, left_frame, right_frame):
 def settings_page(root, left_frame, right_frame):
     scroll_frame = initiate_page(root, left_frame, "Settings Page", SETTINGS_TEXT)
 
-    first_line = tk.Label(scroll_frame, text="Width/Height placeholder", anchor="w", justify="left")
+    first_line = tk.Label(scroll_frame, text="Width/Height placeholder", anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
     first_line.pack(fill="x", padx=15)
 
     settings_data = load_json("settings.json")
@@ -172,10 +187,10 @@ def dynamic_page_loader(name, root, left_frame, right_frame):
         header = REGIONS_TEXT
         def remaining_layout():
             for region_name, region_data in data.items():
-                region_label = tk.Label(scroll_frame, text=region_name, font=("Arial", 12, "bold"), anchor="nw", justify="left")
+                region_label = tk.Label(scroll_frame, text=region_name, font=("Arial", 12, "bold"), anchor="nw", justify="left", wraplength=scroll_frame.wrap_width)
                 region_label.pack(fill=tk.BOTH, expand=True)
                 desc_label = tk.Label(scroll_frame, text=region_data["Description"], anchor="nw", justify="left",
-                                      wraplength=500)
+                                      wraplength=scroll_frame.wrap_width)
                 desc_label.pack(fill=tk.BOTH, expand=True, padx=(20, 0))
     elif config.regions_flag and name == config.regions_flag:
         buttons = SPECIFIC_REGION_BUTTON_LABELS

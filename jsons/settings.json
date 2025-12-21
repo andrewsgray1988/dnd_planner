@@ -1,10 +1,10 @@
 {
     "Width": 1300,
     "Height": 650,
-    "Action Buffer": -1,
+    "Action Buffer": 0,
     "Power Buffer": 0,
     "Artificer": 1,
-    "Barbarian": 5,
+    "Barbarian": 1,
     "Bard": 1,
     "Cleric": 1,
     "Druid": 1,

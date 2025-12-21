@@ -59,19 +59,18 @@ def create_scrollable_frame(parent):
 
     def match_width(event):
         canvas.itemconfig(canvas_window, width=event.width)
+        scroll_frame.wrap_width = event.width - 20
 
     canvas.bind("<Configure>", match_width)
 
+    scroll_frame.wrap_width = 500
     return scroll_frame
 
 def initiate_page(root, left_scroll_frame, header_text, placeholder_text):
     clear_widgets(left_scroll_frame)
 
-    header_label = tk.Label(left_scroll_frame, text=header_text, font=("Arial", 12, "bold"))
+    header_label = tk.Label(left_scroll_frame, text=header_text, font=("Arial", 22, "bold"))
     header_label.pack(pady=10)
-
-    placeholder_label = tk.Label(left_scroll_frame, text=placeholder_text, anchor="nw", justify="left")
-    placeholder_label.pack(fill=tk.BOTH, expand=True)
 
     line_break(left_scroll_frame)
     return left_scroll_frame
@@ -85,71 +84,107 @@ def initiate_buttons(root, left_scroll_frame, right_scroll_frame, labels):
         if label != "Line Break":
             if label.startswith("Label:"):
                 text = label[len("Label:"):].strip()
-                lbl = tk.Label(right_scroll_frame, text=text, anchor="center", justify="center", font=("Arial", 12, "bold"))
+                # Header labels can be title-cased for UI only
+                lbl = tk.Label(
+                    right_scroll_frame,
+                    text=text.title(),
+                    anchor="center",
+                    justify="center",
+                    font=("Arial", 12, "bold")
+                )
                 lbl.pack(fill="x", pady=2)
             else:
-                btn = tk.Button(right_scroll_frame, text=label,
-                                command=lambda l=label: on_button_click(f"__CMD__:{l}", root, left_scroll_frame, right_scroll_frame))
+                display_name = label      # What the user sees
+                actual_name = f"__CMD__:{label}"       # Exact string from JSON, preserves case
+                btn = tk.Button(
+                    right_scroll_frame,
+                    text=display_name,
+                    command=lambda n=actual_name: on_button_click(n, root, left_scroll_frame, right_scroll_frame)
+                )
                 btn.pack(**BUTTON_PACK_OPTIONS)
         else:
             line_break(right_scroll_frame)
     line_break(right_scroll_frame)
     return right_scroll_frame
 
+
 def generate_buttons(root, left_scroll_frame, right_scroll_frame):
     from functions.onclick import on_button_click
-
     data = load_json("regions.json")
     items_to_list = []
+
     current_name = config.nav_stack[-1]
 
-    if current_name == "Regions":
-        if data:
-            items_to_list.append("Label: Regions")
-            items_to_list += list(data.keys())
+    # ---------- Regions ----------
+    if current_name == "Regions" and data:
+        items_to_list.append("Label: Regions")
+        items_to_list += list(data.keys())
+
+    # ---------- Cities and POIs ----------
     elif len(config.nav_stack) >= 2 and config.nav_stack[-2] == "Regions":
         current = data.get(current_name)
+        if not current:
+            return  # No data
+
         cities = current.get("Cities", [])
         if cities:
             items_to_list.append("Label: Cities")
-            items_to_list += [c["City"] for c in current["Cities"]]
+            items_to_list += [c["City"] for c in cities]
             items_to_list.append("Line Break")
+
         pois = current.get("Points Of Interest", [])
         if pois:
             items_to_list.append("Label: Points of Interest")
-            items_to_list += [p["POI"] for p in current["Points Of Interest"]]
+            items_to_list += [p["POI"] for p in pois]
             items_to_list.append("Line Break")
+
+    # ---------- Places and Shops ----------
     elif len(config.nav_stack) >= 3 and config.nav_stack[-3] == "Regions":
         region_name = config.regions_flag
         region = data.get(region_name)
+        if not region:
+            return
+
         result = find_category(current_name, {region_name: region})
         item_type = result[0]
         if item_type == "City":
-            current = None
-            for city in region.get("Cities", []):
-                if city.get("City") == current_name:
-                    current = city
-                    break
+            current = next((c for c in region.get("Cities", []) if c["City"] == current_name), None)
+            if not current:
+                return
+
             places = current.get("Places", [])
             if places:
                 items_to_list.append("Label: Places")
                 items_to_list += [p["Name"] for p in places]
                 items_to_list.append("Line Break")
+
             shops = current.get("Shops", [])
             if shops:
                 items_to_list.append("Label: Shops")
                 items_to_list += [s["Name"] for s in shops]
                 items_to_list.append("Line Break")
 
+    # ---------- Create buttons ----------
     for label in items_to_list:
         if label != "Line Break":
             if label.startswith("Label:"):
                 text = label[len("Label:"):].strip()
-                lbl = tk.Label(right_scroll_frame, text=text, anchor="center", justify="center", font=("Arial", 12, "bold"))
+                lbl = tk.Label(
+                    right_scroll_frame,
+                    text=text.title(),  # UI-only title
+                    anchor="center",
+                    justify="center",
+                    font=("Arial", 12, "bold")
+                )
                 lbl.pack(fill="x", pady=2)
             else:
-                btn = tk.Button(right_scroll_frame, text=label,
-                                command=lambda l=label: on_button_click(l, root, left_scroll_frame, right_scroll_frame))
+                display_name = label  # UI shows exactly what user entered
+                actual_name = label   # preserve casing for logic
+                btn = tk.Button(
+                    right_scroll_frame,
+                    text=display_name,
+                    command=lambda n=actual_name: on_button_click(n, root, left_scroll_frame, right_scroll_frame)
+                )
                 btn.pack(fill=tk.X, padx=5, pady=5)
         else:
             line_break(right_scroll_frame)

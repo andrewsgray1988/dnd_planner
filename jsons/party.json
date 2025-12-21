@@ -1,29 +1,29 @@
 [
     {
-        "name": "Test",
-        "status": "NPC",
-        "armor_class": 1,
+        "name": "Wendy",
+        "status": "Player",
+        "armor_class": 15,
         "magic_items": 1,
-        "combat_value": 1.1,
+        "combat_value": 3.15,
         "actions": 1.5,
         "classes": [
             {
-                "name": "Warlock",
-                "level": 1
+                "name": "Barbarian",
+                "level": 3
             }
         ]
     },
     {
-        "name": "Billy",
+        "name": "Jimothy",
         "status": "Player",
         "armor_class": 10,
-        "magic_items": 1,
-        "combat_value": 1.1,
-        "actions": 1.5,
+        "magic_items": 7,
+        "combat_value": 15.7,
+        "actions": 2.5,
         "classes": [
             {
-                "name": "Firefighter",
-                "level": 1
+                "name": "Wizard",
+                "level": 15
             }
         ]
     }

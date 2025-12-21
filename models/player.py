@@ -26,7 +26,7 @@ class Player:
 
     def get_combat_value(self):
         combat_value = 0
-        armor_value = max(0, 0.01 * (self.armor_class - 10))
+        armor_value = self.armor_class * 0.01
         for cls in self.classes:
             combat_value += cls.get_combat_value()
         total = combat_value + armor_value + (self.magic_items * 0.1)

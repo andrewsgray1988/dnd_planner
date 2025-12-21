@@ -217,11 +217,12 @@ def generate_encounter(root, left_frame=None, right_frame=None):
 
     if not generated_encounter:
         error_text = "No Required monsters, and Random monsters are too strong for the current party!"
-        label = tk.label(scroll_frame, text=error_text, anchor="w", justify="left")
+        label = tk.Label(scroll_frame, text=error_text, anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
+        label.pack(fill="x", pady=2)
     else:
         for mon in generated_encounter:
             mon_text = f"{mon['name']} - Challenge Rating: {mon['challenge_rating']}"
-            label = tk.Label(scroll_frame, text=mon_text, anchor="w", justify="left")
+            label = tk.Label(scroll_frame, text=mon_text, anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
             label.pack(fill="x", pady=2)
 
     button_frame = tk.Frame(encounter_popup)
@@ -292,7 +293,7 @@ def generate_individual_loot(root, challenge_rating, left_frame=None, right_fram
     scroll_frame = create_scrollable_frame(treasure_popup)
     for item in loot:
         item_text = f"{item}"
-        label = tk.Label(scroll_frame, text=item_text, anchor="w", justify="left")
+        label = tk.Label(scroll_frame, text=item_text, anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
         label.pack(fill="x", pady=2)
 
     button_frame = tk.Frame(treasure_popup)
@@ -641,7 +642,7 @@ def generate_treasure_hoard(root, challenge_rating, left_frame=None, right_frame
     scroll_frame = create_scrollable_frame(treasure_popup)
     for item in final_list:
         item_text = f"{item}"
-        label = tk.Label(scroll_frame, text=item_text, anchor="w", justify="left")
+        label = tk.Label(scroll_frame, text=item_text, anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
         label.pack(fill="x", pady=2)
 
     button_frame = tk.Frame(treasure_popup)
