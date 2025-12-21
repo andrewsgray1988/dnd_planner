@@ -1,5 +1,14 @@
 # DnD Planner
 
+## Download
+
+You can download a pre-built version of **DnD Planner** for Windows:
+
+- [Download Latest EXE](https://github.com/andrewsgray1988/dnd_planner/releases/latest)
+- Optional: download the ZIP with EXE + README
+
+Double-click the EXE to run — no Python installation required.
+
 A **Python 3 Tkinter-based application** for managing and planning **Dungeons & Dragons campaigns**.  
 
 Manage your party, NPCs, bestiary, regions, and generate loot or encounters. The program dynamically adapts as more data is entered and stores all information in JSON files.
