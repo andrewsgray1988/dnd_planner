@@ -202,7 +202,7 @@ def generate_encounter(root, left_frame=None, right_frame=None):
             encounter_rating += float(req["challenge_rating"])
 
     if random_list:
-        failsafe = party_action + 4
+        failsafe = party_action + 10
         while encounter_rating < party_power and encounter_actions < party_action and failsafe > 0:
             failsafe -= 1
             rand_mon = random.choice(random_list)

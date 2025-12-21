@@ -1,7 +1,6 @@
 import config
 import tkinter as tk
 
-from tkinter import font
 from functions.gui import (
     initiate_page,
     initiate_buttons,
@@ -20,7 +19,6 @@ from config import (
     SHOP_BUTTON_LABELS
 )
 from text import (
-    MAIN_PAGE_TEXT,
     MAIN_PAGE_BODY_TEXT,
     MANAGE_PARTY_TEXT,
     BESTIARY_PAGE_TEXT,
@@ -38,7 +36,7 @@ from functions.general import (
 )
 
 def main_page(root, left_scroll_frame, right_scroll_frame):
-    scroll_frame = initiate_page(root, left_scroll_frame, "Main Page", MAIN_PAGE_TEXT)
+    scroll_frame = initiate_page(root, left_scroll_frame, "Main Page")
 
     tk.Label(scroll_frame, text="Hello and welcome to the DnD Planner!", font=("Arial", 13)).pack(anchor="w")
     line_break(scroll_frame)
@@ -63,7 +61,21 @@ def main_page(root, left_scroll_frame, right_scroll_frame):
     initiate_buttons(root, left_scroll_frame, right_scroll_frame, MAIN_PAGE_BUTTON_LABELS)
 
 def manage_party_page(root, left_frame, right_frame):
-    scroll_frame = initiate_page(root, left_frame, "Manage Party Page", MANAGE_PARTY_TEXT)
+    scroll_frame = initiate_page(root, left_frame, "Manage Party Page")
+
+    tk.Label(scroll_frame, text="Add Party Member", font=("Arial", 12, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Adds a party member to the active party.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Power is calculated based off Level (modified by settings), armor class, items, and automatically applied").pack(anchor="w")
+    tk.Label(scroll_frame, text="Action count is calculated at 1 per class, 0.5 for bonus action (1 for monks.) Classes that get extra attacks gain an extra 1.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Active - Party member power will be considered for generated encounters.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Camp - Party member power will not be considered for generated encounters, and just stored until use.")
+    tk.Label(scroll_frame, text="Update Party Member", font=("Arial", 12, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Updates a party member's information. This can be used to multi-class if you add a different class.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Delete Party Member", font=("Arial", 12, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Deletes a party member from the party. This is a permanent action and can't be undone.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Move Member", font=("Arial", 12, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Moves a party member to/from camp.").pack(anchor="w")
+    line_break(scroll_frame)
 
     pre_sort = load_json("party.json")
     inactive = load_json("camp.json")
@@ -109,10 +121,18 @@ def manage_party_page(root, left_frame, right_frame):
     initiate_buttons(root, left_frame, right_frame, MANAGE_PARTY_BUTTON_LABELS)
 
 def manage_bestiary_page(root, left_frame, right_frame):
-    scroll_frame = initiate_page(root, left_frame, "Bestiary Page", BESTIARY_PAGE_TEXT)
+    scroll_frame = initiate_page(root, left_frame, "Bestiary Page")
 
-    placeholder_label = tk.Label(scroll_frame, text=BESTIARY_PAGE_BODY_TEXT, anchor="nw", justify="left", wraplength=scroll_frame.wrap_width)
-    placeholder_label.pack(fill="x", pady=5)
+    tk.Label(scroll_frame, text="Add Monster", font=("Arial", 12, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Adds a monster to the bestiary").pack(anchor="w")
+    tk.Label(scroll_frame, text="Required - Generators will use everything within the required first.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Random - Once filled with required, the generator will pull from random to compare against power/action count.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Archive - Creatures will not be used for generators, but stored for future use.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Delete Monster", font=("Arial", 12, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Deletes a party member from the bestiary. This is a permanent action and can't be undone.").pack(anchor="w")
+    tk.Label(scroll_frame, text="Move Monster", font=("Arial", 12, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Moves a party member to/from camp.").pack(anchor="w")
+    line_break(scroll_frame)
 
     required_data = load_json("required.json")
     random_data = load_json("random.json")
@@ -145,7 +165,7 @@ def manage_bestiary_page(root, left_frame, right_frame):
     initiate_buttons(root, left_frame, right_frame, MANAGE_BESTIARY_BUTTON_LABELS)
 
 def generators_page(root, left_frame, right_frame):
-    scroll_frame = initiate_page(root, left_frame, "Generators Page", GENERATORS_PAGE_TEXT)
+    scroll_frame = initiate_page(root, left_frame, "Generators Page")
 
     placeholder_label = tk.Label(scroll_frame, text=GENERATORS_PAGE_BODY_TEXT, anchor="nw", justify="left", wraplength=scroll_frame.wrap_width)
     placeholder_label.pack(fill=tk.BOTH, expand=True)
@@ -155,8 +175,8 @@ def generators_page(root, left_frame, right_frame):
 def settings_page(root, left_frame, right_frame):
     scroll_frame = initiate_page(root, left_frame, "Settings Page", SETTINGS_TEXT)
 
-    first_line = tk.Label(scroll_frame, text="Width/Height placeholder", anchor="w", justify="left", wraplength=scroll_frame.wrap_width)
-    first_line.pack(fill="x", padx=15)
+    tk.Label(scroll_frame, text="Width and Height", font=("Arial", 12, "bold")).pack(anchor="w")
+    tk.Label(scroll_frame, text="Adjusts base Width and Height. (This will only take effect after reload) ").pack(anchor="w")
 
     settings_data = load_json("settings.json")
 
@@ -170,9 +190,13 @@ def settings_page(root, left_frame, right_frame):
         tk.Label(top_row, text=str(value), anchor="w").pack(side="left")
 
         if key == "Height":
-            tk.Label(frame, text="Buffer placeholder", anchor="w").pack(fill="x", padx=15)
+            line_break(scroll_frame)
+            tk.Label(scroll_frame, text="Buffers", font=("Arial", 12, "bold")).pack(anchor="w")
+            tk.Label(scroll_frame, text="Adjusts encounter strength. Positive numbers make encounters harder, negative numbers make encounters easier").pack(anchor="w")
         if key == "Power Buffer":
-            tk.Label(frame, text="Class placeholder", anchor="w").pack(fill="x", padx=15)
+            line_break(scroll_frame)
+            tk.Label(scroll_frame, text="Modifiers", font=("Arial", 12, "bold")).pack(anchor="w")
+            tk.Label(scroll_frame, text="Adjusts calculated powers of base classes. Custom/Homebrew classes fall under Custom.").pack(anchor="w")
     initiate_buttons(root, left_frame, right_frame, SETTINGS_BUTTON_LABELS)
 
 def dynamic_page_loader(name, root, left_frame, right_frame):

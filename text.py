@@ -1,5 +1,4 @@
 # Descriptive Text
-MAIN_PAGE_TEXT = "Hello and welcome to the DnD Planner!"
 BESTIARY_PAGE_TEXT = "Bestiary Page Text Placeholder"
 SETTINGS_TEXT = "Settings Text Placeholder"
 MANAGE_PARTY_TEXT = "Manage Party Text Placeholder"

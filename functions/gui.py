@@ -66,7 +66,7 @@ def create_scrollable_frame(parent):
     scroll_frame.wrap_width = 500
     return scroll_frame
 
-def initiate_page(root, left_scroll_frame, header_text, placeholder_text):
+def initiate_page(root, left_scroll_frame, header_text, placeholder_text=None):
     clear_widgets(left_scroll_frame)
 
     header_label = tk.Label(left_scroll_frame, text=header_text, font=("Arial", 22, "bold"))
